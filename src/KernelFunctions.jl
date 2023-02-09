@@ -189,10 +189,10 @@ end
 Creates `MaternKernel <: KernelFunction` with correlation function
 
 ```math
-K_{\\nu, \\rho}(\\s, \\s') = \\frac{2^{1-\\nu}}{\\Gamma(\\nu)}\\left(2\\nu \\frac{||\\s-\\s'||}{\\rho}\\right)^{\\nu}J_{\\nu}\\left(2\\nu \\frac{||\\s-\\s'||}{\\rho}\\right),
+K_{\\nu, \\rho}(s, s') = \\frac{2^{1-\\nu}}{\\Gamma(\\nu)}\\left(2\\nu \\frac{||s-s'||}{\\rho}\\right)^{\\nu}J_{\\nu}\\left(2\\nu \\frac{||s-s'||}{\\rho}\\right),
 ```
 
-for ``\\s,\\s' \\in \\mathcal{S}``, where ``\\Gamma`` is the gamma function,
+for ``s,s' \\in \\mathcal{S}``, where ``\\Gamma`` is the gamma function,
 ``J_{\\nu}`` is the Bessel function of the second kind, and ``\\{\\rho, \\nu\\}`` 
 are hyperparameters that describe the length-scale and differentiability, respectively.
 
