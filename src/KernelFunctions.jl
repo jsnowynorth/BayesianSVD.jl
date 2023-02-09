@@ -230,7 +230,7 @@ y = range(-5, 5, n)
 ΩU = MaternKernel(x, y, ρ = 4, ν = 4, metric = Distances.Euclidean())
 
 locs = reduce(hcat,reshape([[x, y] for x = x, y = y], Nx * Ny))'
-ΩU =MaternKernel(locs', ρ = 4, ν = 4, metric = Distances.Euclidean())
+ΩU = MaternKernel(locs', ρ = 4, ν = 4, metric = Distances.Euclidean())
 ``` 
 """
 function MaternKernel(x; ρ = 1, ν = 1, metric = Euclidean())
