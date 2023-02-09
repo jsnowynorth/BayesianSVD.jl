@@ -1,6 +1,17 @@
 using BayesianSVD
 using Documenter
 
+using MultivariateStats # not sure what for
+using Statistics # statistics support
+using Distributions # distribution support
+using LinearAlgebra # linear algebra support
+using Plots # plotting support
+using Random # random sampling support
+using SpecialFunctions # for Bessel function
+using ProgressMeter # show progress of sampler
+using Distances # compute distances
+using RecipesBase # special plots
+
 DocMeta.setdocmeta!(BayesianSVD, :DocTestSetup, :(using BayesianSVD); recursive=true)
 
 makedocs(;
@@ -16,7 +27,8 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
-        "Examples" => "examples.md"
+        "Examples" => "examples.md",
+        "API" => "api.md"
     ],
 )
 

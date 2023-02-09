@@ -22,8 +22,6 @@ using ProgressMeter # show progress of sampler
 using Distances # compute distances
 using RecipesBase # special plots
 
-MultivariateStats, Statistics, Distributions, LinearAlgebra, Plots, Random, SpecialFunctions, ProgressMeter, Distances, RecipesBase
-
 include("../src/SimulationFunctions.jl")
 include("../src/HelperFunctions.jl")
 include("../src/KernelFunctions.jl")
