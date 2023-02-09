@@ -13,3 +13,5 @@ Documentation for [BayesianSVD](https://github.com/jsnowynorth/BayesianSVD.jl).
 ```@autodocs
 Modules = [BayesianSVD]
 ```
+
+I am hoping this will show up.
