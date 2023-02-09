@@ -66,7 +66,20 @@ allow for ΩU and ΩV to be of different types (i.e., ΩU is Matern and ΩV is I
 
 # Examples
 ```@example
-To Do.
+m = 100
+n = 100
+x = range(-5, 5, n)
+t = range(0, 10, m)
+
+# Identity Covariances
+ΩU = IdentityKernel(x, metric = Distances.Euclidean())
+ΩV = IdentityKernel(t, metric = Distances.Euclidean())
+data = Data(Y, ΩU, ΩV, k)
+
+# Matern Covariances
+ΩU = MaternKernel(x, ρ = 4, ν = 4, metric = Distances.Euclidean())
+ΩV = MaternKernel(t, ρ = 4, ν = 4, metric = Distances.Euclidean())
+data = Data(Y, ΩU, ΩV, k)
 ``` 
 """
 function Data(Y, ΩU::IdentityKernel, ΩV::IdentityKernel, k)

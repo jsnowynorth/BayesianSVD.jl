@@ -45,6 +45,40 @@ end
 #### Identity Functions
 ######################################################################
 
+"""
+    IdentityKernel(x)
+    IdentityKernel(x, y)
+    IdentityKernel(X::Matrix{Float64})
+
+Creates `IdentityKernel <: KernelFunction`
+
+See also [`Data`](@ref) and [`MaternKernel`](@ref).
+
+# Arguments
+- x: vector of values at which to evaluate the kernel (dimension 1)
+- y: vector of values at which to evaluate the kernel (dimension 2)
+- X::Matrix{Float64}: matrix of values at which to evaluate the kernel (all possible combinations)
+
+# Return
+- K::Array{Float64}
+- Kinv::Array{Float64}
+- logdet::Float64
+
+# Examples
+```@example
+n = 100
+x = range(-5, 5, n)
+ΩU = IdentityKernel(x)
+
+n = 100
+x = range(-5, 5, n)
+y = range(-5, 5, n)
+ΩU = IdentityKernel(x, y)
+
+locs = reduce(hcat,reshape([[x, y] for x = x, y = y], Nx * Ny))'
+ΩU = IdentityKernel(locs')
+``` 
+"""
 function IdentityKernel(x)
 
     K = diagm(ones(length(x)))
@@ -146,6 +180,59 @@ end
 ######################################################################
 #### Matern Functions
 ######################################################################
+
+"""
+    MaternKernel(x; ρ = 1, ν = 1, metric = Euclidean())
+    MaternKernel(x, y; ρ = 1, ν = 1, metric = Euclidean())
+    MaternKernel(X::Matrix{Float64}; ρ = 1, ν = 1, metric = Euclidean())
+
+Creates `MaternKernel <: KernelFunction` with correlation function
+
+```math
+K_{\\nu, \\rho}(\\vs, \\vs') = \\frac{2^{1-\\nu}}{\\Gamma(\\nu)}\\left(2\\nu \\frac{||\\vs-\\vs'||}{\\rho}\\right)^{\\nu}J_{\\nu}\\left(2\\nu \\frac{||\\vs-\\vs'||}{\\rho}\\right),
+```
+
+for ``\\vs,\\vs' \\in \\mathcal{S}``, where ``\\Gamma`` is the gamma function,
+``J_{\\nu}`` is the Bessel function of the second kind, and ``\\{\\rho, \\nu\\}`` 
+are hyperparameters that describe the length-scale and differentiability, respectively.
+
+
+See also [`Data`](@ref) and [`IdentityKernel`](@ref).
+
+# Arguments
+- x: vector of values at which to evaluate the kernel (dimension 1)
+- y: vector of values at which to evaluate the kernel (dimension 2)
+- X::Matrix{Float64}: matrix of values at which to evaluate the kernel (all possible combinations)
+
+# Optional Arguments
+- ρ = 1: defines the effective range
+- ν = 1: smoothing parameter
+- metric = Euclidean(): metric to compute the distance
+
+# Return
+- d::Matrix{Float64}
+- ρ::Float64
+- ν::Float64
+- metric::Metric
+- K::Array{Float64}
+- Kinv::Array{Float64}
+- logdet::Float64
+
+# Examples
+```@example
+n = 100
+x = range(-5, 5, n)
+ΩU = MaternKernel(x, ρ = 4, ν = 4, metric = Distances.Euclidean())
+
+n = 100
+x = range(-5, 5, n)
+y = range(-5, 5, n)
+ΩU = MaternKernel(x, y, ρ = 4, ν = 4, metric = Distances.Euclidean())
+
+locs = reduce(hcat,reshape([[x, y] for x = x, y = y], Nx * Ny))'
+ΩU =MaternKernel(locs', ρ = 4, ν = 4, metric = Distances.Euclidean())
+``` 
+"""
 function MaternKernel(x; ρ = 1, ν = 1, metric = Euclidean())
 
     d = pairwise(metric, x)
