@@ -2,9 +2,7 @@
 CurrentModule = BayesianSVD
 ```
 
-# Functions
-
-Examples for [BayesianSVD](https://github.com/jsnowynorth/BayesianSVD.jl).
+# API
 
 ```@index
 ```
