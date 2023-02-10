@@ -40,7 +40,7 @@ t = range(0, 10, m)
 # random n by k matrix with structure
 U = PON(n, k, ΣU.K)
 V = PON(m, k, ΣV.K)
-nothing
+nothing # hide
 ```
 
 Here is a plot of the spatial basis functions.
@@ -59,7 +59,7 @@ We just need to specify the diagonal components, noise, and put it all together.
 D = diagm([40, 20, 10, 5, 2])
 ϵ = rand(Normal(0, sqrt(0.01)), n, m)
 Z = Φ * D * Ψ' + ϵ # n × m
-nothing
+nothing # hide
 ```
 
 Plot of the smooth "true" data and the noisy data.
@@ -78,14 +78,14 @@ To sample from the Bayesian SVD model we use the `SampleSVD()` function (see `?S
 ΩV = MaternKernel(t, ρ = 4, ν = 4, metric = Euclidean()) # V covariance matrix
 data = Data(Z, ΩU, ΩV, k) # data structure
 pars = Pars(data) # parameter structure
-nothing
+nothing # hide
 ```
 
 We are now ready to sample from the model. Note, we recommend `show_progress = false` when running in a notebook and `show_progress = true` if you have output print in the REPL. Also, the sampler is slow in the notebooks but considerably faster outside of them.
 
 ```@example 1d
 posterior, pars = SampleSVD(data, pars; nits = 1000, burnin = 500, show_progress = false)
-nothing
+nothing # hide
 ```
 
 We can now plot the output of the spatial basis functions
