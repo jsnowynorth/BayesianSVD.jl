@@ -58,14 +58,14 @@ We just need to specify the diagonal components, noise, and put it all together.
 # sqrt of eigenvalues
 D = diagm([40, 20, 10, 5, 2])
 ϵ = rand(Normal(0, sqrt(0.01)), n, m)
-Z = Φ * D * Ψ' + ϵ # n × m
+Z = U * D * V' + ϵ # n × m
 nothing # hide
 ```
 
 Plot of the smooth "true" data and the noisy data.
 ```@example 1d
 l = Plots.@layout [a b]
-p1 = Plots.contourf(x, t, (Φ * D * Ψ')', clim = (-1.05, 1.05).*maximum(abs, Z), title = "Smooth", c = :balance)
+p1 = Plots.contourf(x, t, (U * D * V')', clim = (-1.05, 1.05).*maximum(abs, Z), title = "Smooth", c = :balance)
 p2 = Plots.contourf(x, t, Z', clim = (-1.05, 1.05).*maximum(abs, Z), title = "Noisy", c = :balance)
 Plots.plot(p1, p2, layout = l, size = (1000, 400), margin = 5Plots.mm, xlabel = "Space", ylabel = "Time")
 ```
@@ -91,13 +91,13 @@ nothing # hide
 We can now plot the output of the spatial basis functions
 ```@example 1d
 Plots.plot(posterior, x, size = (1000, 400), basis = 'U', linewidth = 2, c = [:red :green :purple :blue :orange], xlabel = "Space", ylabel = "Value", title = "Spatial Basis Functions", margin = 5Plots.mm)
-Plots.plot!(x, (Φ' .* [1, 1, 1, -1, -1])', label = false, color = "black", linewidth = 2)
+Plots.plot!(x, (U' .* [1, 1, 1, -1, -1])', label = false, color = "black", linewidth = 2)
 Plots.plot!(x, svd(Z).U[:,1:data.k], label = false, linestyle = :dash, linewidth = 2, c = [:red :green :purple :blue :orange])
 ```
 
 And the temporal basis functions.
 ```@example 1d
 Plots.plot(posterior, t, size = (1000, 400), basis = 'V', c = [:red :green :purple :blue :orange], xlabel = "Time", ylabel = "Value", title = "Temporal Basis Functions", margin = 5Plots.mm)
-Plots.plot!(t, (Ψ' .* [1, 1, 1, -1, -1])', label = false, color = "black", linewidth = 2)
+Plots.plot!(t, (V' .* [1, 1, 1, -1, -1])', label = false, color = "black", linewidth = 2)
 Plots.plot!(t, svd(Z).V[:,1:data.k], c = [:red :green :purple :blue :orange], linestyle = :dash, label = false, linewidth = 2)
 ```
