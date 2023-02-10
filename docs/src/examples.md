@@ -28,14 +28,5 @@ x = range(-5, 5, n)
 
 # random n by k matrix with structure
 Φ = PON(n, k, Σ.K)
-nothing # hide
-```
-
-```@example 1
-# plot the basis functions
 Plots.plot(Φ)
-savefig("plot.svg")
-nothing
 ```
-
-![](plot.svg)
