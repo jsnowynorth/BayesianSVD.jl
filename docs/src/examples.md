@@ -6,19 +6,21 @@ CurrentModule = BayesianSVD
 
 ## Simulating Random Basis Functions
 
-We start by simulating a random orthonormal matrix.
-
-```@example 1
+```@setup 1
 using BayesianSVD, Random, Plots, Distributions
 
 # set seed
 Random.seed!(2)
+```
 
+We start by simulating a random orthonormal matrix.
+
+```@example 1
 # size of matrix is n (locations) by k (basis functions)
 n = 100
 k = 5
 
- # domain
+# domain
 x = range(-5, 5, n)
 
 # covariance matrix
@@ -26,8 +28,10 @@ x = range(-5, 5, n)
 
 # random n by k matrix with structure
 Φ = PON(n, k, Σ.K)
+nothing # hide
+```
 
+```@example 1
 # plot the basis functions
 Plots.plot(Φ)
-nothing # hide
 ```
