@@ -34,4 +34,8 @@ nothing # hide
 ```@example 1
 # plot the basis functions
 Plots.plot(Φ)
+savefig("plot.svg")
+nothing
 ```
+
+![](plot.svg)
