@@ -7,7 +7,7 @@ CurrentModule = BayesianSVD
 ## Simulating Random Basis Functions
 
 ```@setup 1
-using BayesianSVD, Random, Plots, Distributions
+using BayesianSVD, Random, Plots, Distances
 
 # set seed
 Random.seed!(2)
@@ -24,7 +24,7 @@ k = 5
 x = range(-5, 5, n)
 
 # covariance matrix
-Σ = MaternKernel(x, ρ = 3, ν = 4, metric = Distributions.Euclidean())
+Σ = MaternKernel(x, ρ = 3, ν = 4, metric = Distances.Euclidean())
 
 # random n by k matrix with structure
 Φ = PON(n, k, Σ.K)
