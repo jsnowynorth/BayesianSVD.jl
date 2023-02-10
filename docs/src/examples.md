@@ -8,7 +8,7 @@ CurrentModule = BayesianSVD
 
 We start by simulating a random orthonormal matrix.
 
-```@example
+```@example 1
 using BayesianSVD, Random, Plots
 
 # set seed
@@ -29,4 +29,5 @@ x = range(-5, 5, n)
 
 # plot the basis functions
 Plots.plot(Φ)
+nothing # hide
 ```

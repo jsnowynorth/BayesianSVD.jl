@@ -20,7 +20,7 @@ makedocs(;
     repo="https://github.com/jsnowynorth/BayesianSVD.jl/blob/{commit}{path}#{line}",
     sitename="BayesianSVD.jl",
     format=Documenter.HTML(;
-        prettyurls=get(ENV, "CI", "false") == "true",
+        prettyurls=get(ENV, "CI", "nothing") == "true",
         canonical="https://jsnowynorth.github.io/BayesianSVD.jl",
         edit_link="main",
         assets=String[],
@@ -33,6 +33,6 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/jsnowynorth/BayesianSVD.jl",
+    repo="github.com/jsnowynorth/BayesianSVD.jl.git",
     devbranch="main",
 )
