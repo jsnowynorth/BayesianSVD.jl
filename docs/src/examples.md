@@ -26,7 +26,7 @@ where $Z$ is a n (space) by m (time) matrix, $U$ is a $n \times k$ matrix, $V$ i
 ```@example 1d
 # set dimensions
 n = 100
-m = 50
+m = 100
 k = 5
 
 # domains

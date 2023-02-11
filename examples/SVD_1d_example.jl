@@ -9,7 +9,7 @@ using Distances, Plots, Random, Distributions, LinearAlgebra
 ######################################################################
 #### Generate Some Data
 ######################################################################
-m = 50
+m = 100
 n = 100
 x = range(-5, 5, n)
 t = range(0, 10, m)
@@ -171,13 +171,13 @@ posterior, pars = SampleSVD(data, pars; nits = 1000, burnin = 500)
 
 Plots.plot(posterior, x, size = (900, 600), basis = 'U', linewidth = 2, c = [:red :green :purple :blue :orange])
 # Plots.plot!(x, Φ, label = false, color = "black", linewidth = 2)
-Plots.plot!(x, (Φ' .* [-1, -1, 1, 1, 1])', label = false, color = "black", linewidth = 2)
-Plots.plot!(x, svd(Y).U[:,1:data.k] .* [1, 1, 1, 1, -1]', label = false, linestyle = :dash, linewidth = 2, c = [:red :green :purple :blue :orange])
+Plots.plot!(x, (Φ' .* [1, 1, 1, -1, -1])', label = false, color = "black", linewidth = 2)
+Plots.plot!(x, svd(Y).U[:,1:data.k] .* [1, 1, 1, 1, 1]', label = false, linestyle = :dash, linewidth = 2, c = [:red :green :purple :blue :orange])
 
 
 Plots.plot(posterior, t, size = (900, 500), basis = 'V', c = [:red :green :purple :blue :orange])
-Plots.plot!(t, (Ψ' .* [-1, -1, 1, 1, 1])', label = false, color = "black", linewidth = 2)
-Plots.plot!(t, (svd(Y).V[:,1:data.k]' .* [1, 1, 1, 1, -1])', c = [:red :green :purple :blue :orange], linestyle = :dash, label = false, linewidth = 2)
+Plots.plot!(t, (Ψ' .* [1, 1, 1, -1, -1])', label = false, color = "black", linewidth = 2)
+Plots.plot!(t, (svd(Y).V[:,1:data.k]' .* [1, 1, 1, 1, 1])', c = [:red :green :purple :blue :orange], linestyle = :dash, label = false, linewidth = 2)
 #
 # savefig("./results/oneSpatialDimension/Vplots.png")
 
