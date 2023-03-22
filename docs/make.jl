@@ -27,8 +27,7 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
-        "Examples" => ["Simulate Data" => "simulateData.md",
-                        "Bayesian SVD" => "example1.md"],
+        "Examples" => "example.md",
         "API" => "api.md"
     ],
 )
