@@ -22,13 +22,13 @@ using ProgressMeter # show progress of sampler
 using Distances # compute distances
 using RecipesBase # special plots
 
-include("../src/SimulationFunctions.jl")
 include("../src/HelperFunctions.jl")
 include("../src/KernelFunctions.jl")
 include("../src/DataClass.jl")
 include("../src/ParameterClass.jl")
 include("../src/PosteriorClass.jl")
 include("../src/SamplingFunctions.jl")
+include("../src/SimulationFunctions.jl")
 
 export 
     # overall sample function

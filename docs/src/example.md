@@ -66,8 +66,8 @@ Plots.plot(p1, p2, layout = l, size = (1000, 400), margin = 5Plots.mm, xlabel = 
 To sample from the Bayesian SVD model we use the `SampleSVD()` function (see `?SampleSVD()` for help). This function requires two parameters - `data::Data` and `pars::Pars`. The parameter function is easy, is requres the one arguemt `data::Data`. The data function requires 4 arguments - (1) the data matrix, (2) covariance matrix `ΩU::KernelFunction` for the U basis matrix, (3) covariance matrix `ΩV::KernelFunction` for the V basis matrix, and (4) the number of basis functions `k`.
 
 ```@example 1d
-ΩU = MaternKernel(x, ρ = 4, ν = 4, metric = Euclidean()) # U covariance matrix
-ΩV = MaternKernel(t, ρ = 4, ν = 4, metric = Euclidean()) # V covariance matrix
+ΩU = MaternKernel(x, ρ = 1, ν = 3.5, metric = Euclidean()) # U covariance matrix
+ΩV = MaternKernel(t, ρ = 1, ν = 3.5, metric = Euclidean()) # V covariance matrix
 data = Data(Z, ΩU, ΩV, k) # data structure
 pars = Pars(data) # parameter structure
 nothing # hide
