@@ -10,9 +10,10 @@ function update_U(data::Data, pars::Pars)
     UZ = pars.UZ
     # Σ = pars.σ*diagm(ones(data.n))
     # Σinv = inv(Σ)
-    NONinv = data.ΩU.Kinv
+    # NONinv = data.ΩU.Kinv
 
     for i in 1:data.k
+        NONinv = data.ΩU[i].Kinv
         inds = i .∉ Vector(1:data.k)
         N = nullspace(U[:,inds]')
         E = data.Y - U[:,inds] * diagm(pars.D[inds]) * pars.V[:,inds]'
@@ -20,11 +21,12 @@ function update_U(data::Data, pars::Pars)
         m = pars.D[i] * (1/pars.σ) * N' * E * pars.V[:,i]
         S = pars.D[i]^2 * (1/pars.σU[i]) .* NONinv + pars.D[i]^2 * (1/pars.σ) * diagm(ones(data.n - data.k + 1))
 
-        G = cholesky(Hermitian(S))
-        b = rand(Normal(0, 1), data.n - data.k + 1)
-        UZ[:,i] = (G.U \ ((G.L \ m) + b))
+        UZ[:,i] = rand(MvNormalCanon(m, S))
+        # G = cholesky(Hermitian(S))
+        # b = rand(Normal(0, 1), data.n - data.k + 1)
+        # UZ[:,i] = (G.U \ ((G.L \ m) + b))
         UZ[:,i] = UZ[:,i] / norm(UZ[:,i])
-        U[:,i] = N * UZ[:,i]
+        U[:,i] = N * UZ[:,i]        
     end
 
     pars.U = U
@@ -42,9 +44,10 @@ function update_V(data::Data, pars::Pars)
     VZ = pars.VZ
     # Σ = pars.σ*diagm(ones(data.n))
     # Σinv = inv(Σ)
-    NONinv = data.ΩV.Kinv
+    # NONinv = data.ΩV.Kinv
 
     for i in 1:data.k
+        NONinv = data.ΩV[i].Kinv
         inds = i .∉ Vector(1:data.k)
         N = nullspace(V[:,inds]')
         E = data.Y - pars.U[:,inds] * diagm(pars.D[inds]) * V[:,inds]'
@@ -52,9 +55,10 @@ function update_V(data::Data, pars::Pars)
         m = pars.D[i] * (1/pars.σ) * N' * E' * pars.U[:,i]
         S = pars.D[i]^2 * (1/pars.σV[i]) .* NONinv + pars.D[i]^2 * (1/pars.σ) * diagm(ones(data.m - data.k + 1))
 
-        G = cholesky(Hermitian(S))
-        b = rand(Normal(0, 1), data.m - data.k + 1)
-        VZ[:,i] = (G.U \ ((G.L \ m) + b))
+        VZ[:,i] = rand(MvNormalCanon(m, S))
+        # G = cholesky(Hermitian(S))
+        # b = rand(Normal(0, 1), data.m - data.k + 1)
+        # VZ[:,i] = (G.U \ ((G.L \ m) + b))
         VZ[:,i] = VZ[:,i] / norm(VZ[:,i])
         V[:,i] = N * VZ[:,i]
     end
@@ -73,14 +77,10 @@ function likeD(d, i, data::Data, pars::Pars)
     Dtest = copy(diagm(pars.D))
     Dtest[i,i] = d
     
-    ll = (-((data.n-data.k+1)/2) * log(2*pi*pars.σU[i]) - (1/2) * data.ΩU.logdet - (1/2)*(d .* pars.UZ[:,i])'*data.ΩU.Kinv*(d .* pars.UZ[:,i]) + (data.n-data.k-1) * log(d) ) +
-    (-((data.m-data.k+1)/2) * log(2*pi*pars.σV[i]) - (1/2) * data.ΩV.logdet - (1/2)*(d .* pars.VZ[:,i])'*data.ΩV.Kinv*(d .* pars.VZ[:,i]) + (data.m-data.k-1) * log(d) ) +
+    ll = (-((data.n-data.k+1)/2) * log(2*pi*pars.σU[i]) - (1/2) * data.ΩU[i].logdet - (1/2)*(d .* pars.UZ[:,i])' * (data.ΩU[i].Kinv./pars.σU[i]) * (d .* pars.UZ[:,i]) + (data.n-data.k-1) * log(d) ) +
+    (-((data.m-data.k+1)/2) * log(2*pi*pars.σV[i]) - (1/2) * data.ΩV[i].logdet - (1/2)*(d .* pars.VZ[:,i])' * (data.ΩV[i].Kinv/pars.σV[i]) * (d .* pars.VZ[:,i]) + (data.m-data.k-1) * log(d) ) +
     (-((data.m*data.n)/2) * log(2*pi*pars.σ) -(1/2) * (1/pars.σ) * tr((data.Y .- pars.U * Dtest * pars.V')'*(data.Y .- pars.U * Dtest * pars.V')))
     return ll
-
-    # return(logpdf(MvNormal(zeros(size(pars.UZ, 1)), Hermitian(Symmetric(pars.σU[i] .* data.ΩU.K))), d .* pars.UZ[:,i]) + (data.n-data.k-1) * log(d) +
-    #        logpdf(MvNormal(zeros(size(pars.VZ, 1)), Hermitian(Symmetric(pars.σV[i] .* data.ΩV.K))), d .* pars.VZ[:,i]) + (data.m-data.k-1) * log(d) +
-    #        logpdf(MatrixNormal(pars.U * Dtest * pars.V', pars.σ * I(data.n), I(data.m)), data.Y))
 
 end
 
@@ -92,14 +92,9 @@ function update_D(data::Data, pars::Pars)
 
     for i in 1:data.k
 
-        # propSD = 0.2
-        # lbnd = 0.1
-        # ubnd = 100
-        # lbnd = 0
-        # ubnd = Inf
         propD = rand(TruncatedNormal(D[i], propSD[i], 0, Inf))
         
-        rat = likeD(propD, i, data, pars) - likeD(D[i], i, data, pars)
+        rat = likeD(propD, i, data, pars) + logpdf(TruncatedNormal(propD, propSD[i], 0, Inf), D[i]) - likeD(D[i], i, data, pars) - logpdf(TruncatedNormal(D[i], propSD[i], 0, Inf), propD)
 
         if log(rand(Uniform())) < rat
             D[i] = propD
@@ -140,11 +135,12 @@ end
 function update_σU(data::Data, pars::Pars)
 
     σU = pars.σU
-    a_hat = data.n/2 + 2
 
+    ν = 2
+    A = 1e6
     for i in 1:data.k
-        b_hat = 2 + 0.5 * (pars.D[i]^2 * pars.UZ[:,i]' * (data.ΩU.Kinv) * pars.UZ[:,i])
-        σU[i] = rand(InverseGamma(a_hat, b_hat))
+        a = rand(InverseGamma((ν+1)/2, (1/A^2) + ν/σU[i]))
+        σU[i] = rand(InverseGamma((data.n+ν)/2, ν/a + 0.5 * (pars.D[i]^2 * pars.UZ[:,i]' * data.ΩU[i].Kinv * pars.UZ[:,i])))
     end
 
     pars.σU = σU
@@ -154,15 +150,17 @@ function update_σU(data::Data, pars::Pars)
 end
 
 
+
 #### Update σV
 function update_σV(data::Data, pars::Pars)
 
     σV = pars.σV
-    a_hat = data.m/2 + 2
-
+    
+    ν = 2
+    A = 1e6
     for i in 1:data.k
-        b_hat = 2 + 0.5 * (pars.D[i]^2 * pars.VZ[:,i]' * (data.ΩV.Kinv) * pars.VZ[:,i])
-        σV[i] = rand(InverseGamma(a_hat, b_hat))
+        a = rand(InverseGamma((ν+1)/2, (1/A^2) + ν/σV[i]))
+        σV[i] = rand(InverseGamma((data.m+ν)/2, ν/a + 0.5 * (pars.D[i]^2 * pars.VZ[:,i]' * data.ΩV[i].Kinv * pars.VZ[:,i])))
     end
 
     pars.σV = σV
@@ -173,32 +171,50 @@ end
 
 
 #### Update ρ
+function ρLike(u, C)
+    return sum(logpdf(MvNormal(zeros(size(u, 1)), C.K), u))
+end
+
 function update_ρ(data::Data, pars::Pars)
 
-    D = copy(pars.D)
-    propSD = pars.propSD
-    Daccept = pars.Daccept
-
     for i in 1:data.k
+        propsd = pars.propSU[i]
+        ρprop = rand(TruncatedNormal(data.ΩU[i].ρ, propsd, 0, 5))
+        Cprop = copy(data.ΩU[i])
+        Cprop.ρ = ρprop
+        Cprop = MaternKernel(Cprop)
+        ρprior = InverseGamma(2, 2)
 
-        # propSD = 0.2
-        # lbnd = 0.1
-        # ubnd = 100
-        lbnd = 0
-        ubnd = Inf
-        propD = rand(TruncatedNormal(D[i], propSD[i], lbnd, ubnd))
-        
-        rat = likeD(propD, i, data, pars) - likeD(D[i], i, data, pars)
+        rat = ρLike(pars.UZ[:,i], Cprop) + logpdf(ρprior, ρprop) + logpdf(TruncatedNormal(ρprop, propsd, 0, Inf), data.ΩU[i].ρ) - 
+                (ρLike(pars.UZ[:,i], data.ΩU[i]) + logpdf(ρprior, data.ΩU[i].ρ) + logpdf(TruncatedNormal(data.ΩU[i].ρ, propsd, 0, Inf), ρprop))
 
         if log(rand(Uniform())) < rat
-            D[i] = propD
-            Daccept[i] = 1
+            pars.ρU[i] = ρprop
+            data.ΩU[i] = Cprop
+            pars.Uaccept[i] = 1
         end
-        
+
     end
 
-    pars.D = D
-    pars.Daccept = Daccept
+    for i in 1:data.k
+        propsd = pars.propSV[i]
+        ρprop = rand(TruncatedNormal(data.ΩU[i].ρ, propsd, 0, 5))
+        Cprop = copy(data.ΩV[i])
+        Cprop.ρ = ρprop
+        Cprop = MaternKernel(Cprop)
+        ρprior = InverseGamma(2, 2)
+
+        rat = ρLike(pars.VZ[:,i], Cprop) + logpdf(ρprior, ρprop) + logpdf(TruncatedNormal(ρprop, propsd, 0, Inf), data.ΩV[i].ρ) - 
+                (ρLike(pars.VZ[:,i], data.ΩV[i]) + logpdf(ρprior, data.ΩV[i].ρ) + logpdf(TruncatedNormal(data.ΩV[i].ρ, propsd, 0, Inf), ρprop))
+
+       
+        if log(rand(Uniform())) < rat
+            pars.ρV[i] = ρprop
+            data.ΩV[i] = Cprop
+            pars.Vaccept[i] = 1
+        end
+
+    end
 
     return pars
     
@@ -296,11 +312,11 @@ function SampleSVD(data::IdentityData, pars::IdentityPars; nits = 10000, burnin 
             acceptRate = mean(Daccept_post[:,(i-9):i], dims = 2)
             for j in 1:data.k
                 if acceptRate[j] < 0.25
-                    pars.propSD = pars.propSD * 0.7
+                    pars.propSD[j] = pars.propSD[j] * 0.7
                 elseif acceptRate[j] > 0.45
-                    pars.propSD = pars.propSD / 0.7
+                    pars.propSD[j] = pars.propSD[j] / 0.7
                 else
-                    pars.propSD = pars.propSD
+                    pars.propSD[j] = pars.propSD[j]
                 end
             end
         end
@@ -376,11 +392,11 @@ function SampleSVD(data::ExponentialData, pars::ExponentialPars; nits = 10000, b
             acceptRate = mean(Daccept_post[:,(i-9):i], dims = 2)
             for j in 1:data.k
                 if acceptRate[j] < 0.25
-                    pars.propSD = pars.propSD * 0.7
+                    pars.propSD[j] = pars.propSD[j] * 0.7
                 elseif acceptRate[j] > 0.45
-                    pars.propSD = pars.propSD / 0.7
+                    pars.propSD[j] = pars.propSD[j] / 0.7
                 else
-                    pars.propSD = pars.propSD
+                    pars.propSD[j] = pars.propSD[j]
                 end
             end
         end
@@ -458,11 +474,11 @@ function SampleSVD(data::GaussianData, pars::GaussianPars; nits = 10000, burnin 
             acceptRate = mean(Daccept_post[:,(i-9):i], dims = 2)
             for j in 1:data.k
                 if acceptRate[j] < 0.25
-                    pars.propSD = pars.propSD * 0.7
+                    pars.propSD[j] = pars.propSD[j] * 0.7
                 elseif acceptRate[j] > 0.45
-                    pars.propSD = pars.propSD / 0.7
+                    pars.propSD[j] = pars.propSD[j] / 0.7
                 else
-                    pars.propSD = pars.propSD
+                    pars.propSD[j] = pars.propSD[j]
                 end
             end
         end
@@ -517,13 +533,17 @@ function SampleSVD(data::MaternData, pars::MaternPars; nits = 10000, burnin = 50
     σ_post = Array{Float64}(undef, keep_samps)
     σU_post = Array{Float64}(undef, data.k, keep_samps)
     σV_post = Array{Float64}(undef, data.k, keep_samps)
-    ρ_post = Array{Float64}(undef, keep_samps)
+    ρU_post = Array{Float64}(undef, data.k, keep_samps)
+    ρV_post = Array{Float64}(undef, data.k, keep_samps)
     ν_post = Array{Float64}(undef, keep_samps)
     propSD_post = Array{Float64}(undef, data.k, burnin)
     Daccept_post = Array{Float64}(undef, data.k, burnin)
+    propSU_post = Array{Float64}(undef, data.k, burnin)
+    Uaccept_post = Array{Float64}(undef, data.k, burnin)
+    propSV_post = Array{Float64}(undef, data.k, burnin)
+    Vaccept_post = Array{Float64}(undef, data.k, burnin)
 
     p = Progress(burnin, desc = "Burnin..."; showspeed = true, enabled = show_progress)
-    # @showprogress 1 "Burnin..." for i in 1:burnin
     for i in 1:burnin
 
         pars = update_D(data, pars)
@@ -535,6 +555,7 @@ function SampleSVD(data::MaternData, pars::MaternPars; nits = 10000, burnin = 50
         # pars = update_ρ(data, pars)
         # pars = update_ν(data, pars)
 
+        # D acceptance rate
         Daccept_post[:,i] = pars.Daccept
         pars.Daccept = zeros(data.k)
 
@@ -542,24 +563,59 @@ function SampleSVD(data::MaternData, pars::MaternPars; nits = 10000, burnin = 50
             acceptRate = mean(Daccept_post[:,(i-9):i], dims = 2)
             for j in 1:data.k
                 if acceptRate[j] < 0.25
-                    pars.propSD = pars.propSD * 0.7
+                    pars.propSD[j] = pars.propSD[j] * 0.7
                 elseif acceptRate[j] > 0.45
-                    pars.propSD = pars.propSD / 0.7
+                    pars.propSD[j] = pars.propSD[j] / 0.7
                 else
-                    pars.propSD = pars.propSD
+                    pars.propSD[j] = pars.propSD[j]
                 end
             end
         end
-
         propSD_post[:,i] = pars.propSD
+
+        # ρU acceptance rate
+        Uaccept_post[:,i] = pars.Uaccept
+        pars.Uaccept = zeros(data.k)
+    
+        if mod(i, 10) == 0
+            acceptRate = mean(Uaccept_post[:,(i-9):i], dims = 2)
+            for j in 1:data.k
+                if acceptRate[j] < 0.25
+                    pars.propSU[j] = pars.propSU[j] * 0.7
+                elseif acceptRate[j] > 0.45
+                    pars.propSU[j] = pars.propSU[j] / 0.7
+                else
+                    pars.propSU[j] = pars.propSU[j]
+                end
+            end
+        end
+        propSU_post[:,i] = pars.propSU
+
+
+        # ρV acceptance rate
+        Vaccept_post[:,i] = pars.Vaccept
+        pars.Vaccept = zeros(data.k)
+    
+        if mod(i, 10) == 0
+            acceptRate = mean(Vaccept_post[:,(i-9):i], dims = 2)
+            for j in 1:data.k
+                if acceptRate[j] < 0.25
+                    pars.propSV[j] = pars.propSV[j] * 0.7
+                elseif acceptRate[j] > 0.45
+                    pars.propSV[j] = pars.propSV[j] / 0.7
+                else
+                    pars.propSV[j] = pars.propSV[j]
+                end
+            end
+        end
+        propSV_post[:,i] = pars.propSV
 
         ProgressMeter.next!(p)
 
     end
     
     p = Progress(keep_samps, desc = "Sampling..."; showspeed = true, enabled = show_progress)
-    # @showprogress 1 "Sampling..." for i in 1:keep_samps
-    for i in 1:burnin
+    for i in 1:keep_samps
 
         pars = update_D(data, pars)
         pars = update_U(data, pars)
@@ -578,14 +634,15 @@ function SampleSVD(data::MaternData, pars::MaternPars; nits = 10000, burnin = 50
         σ_post[i] = pars.σ
         σU_post[:,i] = pars.σU
         σV_post[:,i] = pars.σV
-        ρ_post[i] = pars.ρ
+        ρU_post[:,i] = pars.ρU
+        ρV_post[:,i] = pars.ρV
         ν_post[i] = pars.ν
 
         ProgressMeter.next!(p)
     
     end
     
-    posterior = Posterior(data, U_post, UZ_post, V_post, VZ_post, D_post, σ_post, σU_post, σV_post, ρ_post, ν_post)
+    posterior = Posterior(data, U_post, UZ_post, V_post, VZ_post, D_post, σ_post, σU_post, σV_post, ρU_post, ρV_post, ν_post)
     
     return posterior, pars
 

@@ -125,27 +125,3 @@ function posteriorCoverage(c::Matrix{Float64}, d::Array{Array{Float64, 2}, 1}, p
   end
   
 end
-
-# posteriorCoverage(Matrix((Φ' .* [-1, -1, 1])'), posterior.U, 0.95)
-# posteriorCoverage(Matrix((Ψ' .* [-1, -1, 1])'), posterior.V, 0.95)
-
-# posteriorCoverage(Φ * D * Ψ', Yest, 0.95)
-
-# posteriorCoverage(Φ * D * Ψ', Yest, 0.95, returnData = true)
-
-# Plots.contourf(Φ * D * Ψ')
-
-
-
-# locs = copy(reduce(hcat, reshape([ [t, x] for x=x, t=t],length(x)*length(t)))')
-# shapeInd = reshape(posteriorCoverage(Φ * D * Ψ', Yest, 0.95, returnData = true), :)
-# a = Plots.contourf(t, x, Φ * D * Ψ')
-# for i in axes(locs, 1)
-#   if shapeInd[i]
-#     # Plots.scatter!([locs[i,1]], [locs[i,2]], markershape = :none, label = "")
-#     continue
-#   else
-#     a = Plots.scatter!([locs[i,1]], [locs[i,2]], markershape = :xcross, label = "", c = :black)
-#   end
-# end
-# a

@@ -4,11 +4,6 @@
 #### Data Structure Sets
 ######################################################################
 
-# IdentityData
-# ExponentialData
-# GaussianData
-# MaternData
-
 abstract type Data end
 
 struct IdentityData <: Data
@@ -120,8 +115,11 @@ function Data(Y, ΩU::ExponentialKernel, ΩV::ExponentialKernel, k)
     ΩV.d = ΩV.d[indstart:mend, indstart:mend]
     ΩU = ExponentialKernel(ΩU)
     ΩV = ExponentialKernel(ΩV)
+
+    ΣU = [copy(ΩU) for i in 1:k]
+    ΣV = [copy(ΩV) for i in 1:k]
     
-    ExponentialData(Y, n, m, k, ΩU, ΩV)
+    ExponentialData(Y, n, m, k, ΣU, ΣV)
 end
 
 function Data(Y, ΩU::GaussianKernel, ΩV::GaussianKernel, k)
@@ -141,8 +139,11 @@ function Data(Y, ΩU::GaussianKernel, ΩV::GaussianKernel, k)
     ΩV.d = ΩV.d[indstart:mend, indstart:mend]
     ΩU = GaussianKernel(ΩU)
     ΩV = GaussianKernel(ΩV)
+
+    ΣU = [copy(ΩU) for i in 1:k]
+    ΣV = [copy(ΩV) for i in 1:k]
     
-    GaussianData(Y, n, m, k, ΩU, ΩV)
+    GaussianData(Y, n, m, k, ΣU, ΣV)
 end
 
 function Data(Y, ΩU::MaternKernel, ΩV::MaternKernel, k)
@@ -162,8 +163,11 @@ function Data(Y, ΩU::MaternKernel, ΩV::MaternKernel, k)
     ΩV.d = ΩV.d[indstart:mend, indstart:mend]
     ΩU = MaternKernel(ΩU)
     ΩV = MaternKernel(ΩV)
+
+    ΣU = [copy(ΩU) for i in 1:k]
+    ΣV = [copy(ΩV) for i in 1:k]
     
-    MaternData(Y, n, m, k, ΩU, ΩV)
+    MaternData(Y, n, m, k, ΣU, ΣV)
 end
 
 
@@ -173,5 +177,5 @@ Base.show(io::IO, data::Data) =
     " ├─── m: ", data.m, '\n',
     " ├─── k: ", data.k, '\n',
     " ├─── ΩU: ", typeof(data.ΩU), '\n',
-    " └─── ΩU: ", typeof(data.ΩU), '\n')
+    " └─── ΩV: ", typeof(data.ΩV), '\n')
 #

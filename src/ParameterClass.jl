@@ -60,10 +60,15 @@ mutable struct MaternPars <: Pars
     σ::Float64
     σU::Array{Float64}
     σV::Array{Float64}
-    ρ::Float64
+    ρU::Vector{Float64}
+    ρV::Vector{Float64}
     ν::Float64
     propSD::Array{Float64}
     Daccept::Array{Float64}
+    propSU::Array{Float64}
+    Uaccept::Array{Float64}
+    propSV::Array{Float64}
+    Vaccept::Array{Float64}
 end
 
 
@@ -216,13 +221,19 @@ function Pars(data::MaternData)
     σU = ones(data.k)
     σV = ones(data.k)
 
-    ρ = 1.0
+    ρU = ones(data.k)
+    ρV = ones(data.k)
     ν = 1.0
 
     propSD = ones(data.k)
     Daccept = zeros(data.k)
 
-    MaternPars(U, UZ, V, VZ, D, σ, σU, σV, ρ, ν, propSD, Daccept)
+    propSU = 0.1*ones(data.k)
+    Uaccept = zeros(data.k)
+    propSV = 0.1*ones(data.k)
+    Vaccept = zeros(data.k)
+
+    MaternPars(U, UZ, V, VZ, D, σ, σU, σV, ρU, ρV, ν, propSD, Daccept, propSU, Uaccept, propSV, Vaccept)
 end
 
 

@@ -100,6 +100,7 @@ function IdentityKernel(X::Matrix{Float64})
     
 end
 
+Base.copy(C::IdentityKernel) = IdentityKernel(C)
 
 ######################################################################
 #### Exponential Functions
@@ -138,6 +139,8 @@ function ExponentialKernel(C::ExponentialKernel)
 
 end
 
+Base.copy(C::ExponentialKernel) = ExponentialKernel(C)
+
 
 ######################################################################
 #### Gaussian Functions
@@ -145,7 +148,8 @@ end
 function GaussianKernel(x; ρ = 1, metric = Euclidean())
 
     d = pairwise(metric, x)
-    K = exp.(-(d.^2)./(ρ^2))
+    K = exp.(-(d .^2 ./ (2*ρ^2)))
+    K = K + diagm(0.00000001*ones(length(x)))
     GaussianKernel(d, ρ, metric, K, inv(K), logdet(K))
 
 end
@@ -156,7 +160,8 @@ function GaussianKernel(x, y; ρ = 1, metric = Euclidean())
     Ny = length(y)
     locs = reduce(hcat,reshape([[x, y] for x = x, y = y], Nx * Ny))'
     d = pairwise(metric, locs')
-    K = exp.(-(d.^2)./(ρ^2))
+    K = exp.(-(d .^2 ./ (2*ρ^2)))
+    K = K + diagm(0.00000001*ones(size(d,1)))
     GaussianKernel(d, ρ, metric, K, inv(K), logdet(K))
     
 end
@@ -164,17 +169,21 @@ end
 function GaussianKernel(X::Matrix{Float64}; ρ = 1, metric = Euclidean())
 
     d = pairwise(metric, X')
-    K = exp.(-(d.^2)./(ρ^2))
+    K = exp.(-(d .^2 ./ (2*ρ^2)))
+    K = K + diagm(0.00000001*ones(size(d,1)))
     GaussianKernel(d, ρ, metric, K, inv(K), logdet(K))
     
 end
 
 function GaussianKernel(C::GaussianKernel)
-
-    K = exp.(-(C.d.^2)./(C.ρ^2))
+    
+    K = exp.(-(C.d .^2 ./ (2*C.ρ^2)))
+    K = K + diagm(0.00000001*ones(size(D.d,1)))
     GaussianKernel(C.d, C.ρ, C.metric, K, inv(K), logdet(K))
 
 end
+
+Base.copy(C::GaussianKernel) = GaussianKernel(C)
 
 
 ######################################################################
@@ -274,6 +283,7 @@ function MaternKernel(C::MaternKernel)
 
 end
 
+Base.copy(C::MaternKernel) = MaternKernel(C)
 
 ######################################################################
 #### Base Show
