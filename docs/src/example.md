@@ -33,10 +33,11 @@ t = range(0, 10, m)
 ΣV = MaternKernel(t, ρ = 3, ν = 3.5, metric = Euclidean())
 
 
-D = [40 ,20 ,10 ,5 ,2] # sqrt of eigenvalues
+D = [40, 20, 10, 5, 2] # sqrt of eigenvalues
 k = 5 # number of basis functions 
 ϵ = 0.01 # noise
 
+Random.seed!(2)
 U, V, Y, Z = GenerateData(ΣU, ΣV, D, k, ϵ)
 nothing # hide
 ```
@@ -82,15 +83,15 @@ nothing # hide
 
 We can now plot the output of the spatial basis functions
 ```@example 1d
-Plots.plot(posterior, x, size = (1000, 400), basis = 'U', linewidth = 2, c = [:red :green :purple :blue :orange], xlabel = "Space", ylabel = "Value", title = "Spatial Basis Functions", margin = 5Plots.mm)
-Plots.plot!(x, (U' .* [1, -1, 1, -1, -1])', label = false, color = "black", linewidth = 2)
+Plots.plot(posterior, x, basis = 'U', linewidth = 2, c = [:red :green :purple :blue :orange], xlabel = "Space", ylabel = "Value", title = "Spatial Basis Functions", margin = 5Plots.mm)
+Plots.plot!(x, (U' .* [1, 1, 1, 1, 1])', label = false, color = "black", linewidth = 2)
 Plots.plot!(x, svd(Z).U[:,1:data.k], label = false, linestyle = :dash, linewidth = 2, c = [:red :green :purple :blue :orange])
 ```
 
 And the temporal basis functions.
 ```@example 1d
-Plots.plot(posterior, t, size = (1000, 400), basis = 'V', c = [:red :green :purple :blue :orange], xlabel = "Time", ylabel = "Value", title = "Temporal Basis Functions", margin = 5Plots.mm)
-Plots.plot!(t, (V' .* [1, -1, 1, -1, 1])', label = false, color = "black", linewidth = 2)
+Plots.plot(posterior, t, basis = 'V', c = [:red :green :purple :blue :orange], xlabel = "Time", ylabel = "Value", title = "Temporal Basis Functions", margin = 5Plots.mm)
+Plots.plot!(t, (V' .* [1, 1, 1, 1, 1])', label = false, color = "black", linewidth = 2)
 Plots.plot!(t, svd(Z).V[:,1:data.k], c = [:red :green :purple :blue :orange], linestyle = :dash, label = false, linewidth = 2)
 ```
 
