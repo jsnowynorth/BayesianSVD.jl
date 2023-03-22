@@ -20,8 +20,8 @@ struct ExponentialData <: Data
     n::Int
     m::Int
     k::Int
-    ΩU::ExponentialKernel
-    ΩV::ExponentialKernel
+    ΩU::Vector{ExponentialKernel}
+    ΩV::Vector{ExponentialKernel}
 end
 
 struct GaussianData <: Data
@@ -29,8 +29,8 @@ struct GaussianData <: Data
     n::Int
     m::Int
     k::Int
-    ΩU::GaussianKernel
-    ΩV::GaussianKernel
+    ΩU::Vector{GaussianKernel}
+    ΩV::Vector{GaussianKernel}
 end
 
 struct MaternData <: Data
@@ -38,8 +38,8 @@ struct MaternData <: Data
     n::Int
     m::Int
     k::Int
-    ΩU::MaternKernel
-    ΩV::MaternKernel
+    ΩU::Vector{MaternKernel}
+    ΩV::Vector{MaternKernel}
 end
 
 

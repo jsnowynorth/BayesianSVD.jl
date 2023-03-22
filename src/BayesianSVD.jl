@@ -33,6 +33,7 @@ include("../src/SimulationFunctions.jl")
 export 
     # overall sample function
     PON,
+    GenerateData,
 
     # overall sample function
     SampleSVD,
