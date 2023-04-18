@@ -16,9 +16,9 @@ Random.seed!(2)
 
 The function `GenerateData()` will simulate data from the model
 
-$$Z = UDV' + \epsilon,$$
+``Z = UDV' + \epsilon,``
 
-where $Z$ is a n (space) by m (time) matrix, $U$ is a $n \times k$ matrix, $V$ is a $m \times k$ matrix, and $\epsilon \sim N(0, \sigma^2)$.
+where ``Z`` is a n (space) by m (time) matrix, ``U`` is a ``n \times k`` matrix, ``V`` is a ``m \times k`` matrix, ``D`` is a ``k \times k`` and ``\epsilon \sim N(0, \sigma^2)``.
 We start by setting up the desired dimensions for the simulated data.
 
 ```@example 1d
@@ -29,16 +29,16 @@ x = range(-5, 5, n)
 t = range(0, 10, m)
 
 # covariance matrices
-ΣU = MaternKernel(x, ρ = 3, ν = 3.5, metric = Euclidean())
-ΣV = MaternKernel(t, ρ = 3, ν = 3.5, metric = Euclidean())
+ΣU = MaternCorrelation(x, ρ = 3, ν = 3.5, metric = Euclidean())
+ΣV = MaternCorrelation(t, ρ = 3, ν = 3.5, metric = Euclidean())
 
 
 D = [40, 20, 10, 5, 2] # sqrt of eigenvalues
 k = 5 # number of basis functions 
-ϵ = 0.01 # noise
+ϵ = 2 # noise
 
 Random.seed!(2)
-U, V, Y, Z = GenerateData(ΣU, ΣV, D, k, ϵ)
+U, V, Y, Z = GenerateData(ΣU, ΣV, D, k, ϵ, SNR = true)
 nothing # hide
 ```
 
@@ -67,10 +67,10 @@ Plots.plot(p1, p2, layout = l, size = (1000, 400), margin = 5Plots.mm, xlabel = 
 To sample from the Bayesian SVD model we use the `SampleSVD()` function (see `?SampleSVD()` for help). This function requires two parameters - `data::Data` and `pars::Pars`. The parameter function is easy, is requres the one arguemt `data::Data`. The data function requires 4 arguments - (1) the data matrix, (2) covariance matrix `ΩU::KernelFunction` for the U basis matrix, (3) covariance matrix `ΩV::KernelFunction` for the V basis matrix, and (4) the number of basis functions `k`.
 
 ```@example 1d
-ΩU = MaternKernel(x, ρ = 1, ν = 3.5, metric = Euclidean()) # U covariance matrix
-ΩV = MaternKernel(t, ρ = 1, ν = 3.5, metric = Euclidean()) # V covariance matrix
-data = Data(Z, ΩU, ΩV, k) # data structure
-pars = Pars(data) # parameter structure
+ΩU = MaternCorrelation(x, ρ = 3, ν = 3.5, metric = Euclidean()) # U covariance matrix
+ΩV = MaternCorrelation(t, ρ = 3, ν = 3.5, metric = Euclidean()) # V covariance matrix
+data = Data(Z, x, t, k) # data structure
+pars = Pars(data, ΩU, ΩV) # parameter structure
 nothing # hide
 ```
 

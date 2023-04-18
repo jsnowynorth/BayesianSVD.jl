@@ -1,16 +1,12 @@
-
 ######################################################################
 #### Joshua North
 #### Bayesian Basis Functions
 ######################################################################
 
-"""
-    BayesianSVD
 
-Here is my package.
-"""
-module BayesianSVD
-
+######################################################################
+#### Load Packages
+######################################################################
 using MultivariateStats # not sure what for
 using Statistics # statistics support
 using Distributions # distribution support
@@ -32,28 +28,3 @@ include("../src/DataClass.jl")
 include("../src/ParameterClass.jl")
 include("../src/PosteriorClass.jl")
 include("../src/SamplingFunctions.jl")
-
-export 
-    # overall sample function
-    PON,
-    GenerateData,
-
-    # helper functions
-    posteriorCoverage,
-    hpd,
-
-    # overall sample function
-    SampleSVD,
-
-    # Correlation Kernels
-    IdentityCorrelation,
-    ExponentialCorrelation,
-    GaussianCorrelation,
-    MaternCorrelation,
-    SparseCorrelation,
-
-    # Parameter and Data
-    Pars,
-    Data
-
-end
