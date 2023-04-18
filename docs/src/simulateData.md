@@ -32,15 +32,16 @@ x = range(-5, 5, n)
 t = range(0, 10, m)
 
 # covariance matrices
-ΣU = MaternKernel(x, ρ = 3, ν = 3.5, metric = Euclidean())
-ΣV = MaternKernel(t, ρ = 3, ν = 3.5, metric = Euclidean())
+ΣU = MaternCorrelation(x, ρ = 3, ν = 3.5, metric = Euclidean())
+ΣV = MaternCorrelation(t, ρ = 3, ν = 3.5, metric = Euclidean())
 
 
-D = [40 ,20 ,10 ,5 ,2] # sqrt of eigenvalues
+D = [40, 20, 10, 5, 2] # sqrt of eigenvalues
 k = 5 # number of basis functions 
-ϵ = 0.01 # noise
+ϵ = 2 # noise
 
-U, V, Y, Z = GenerateData(ΣU, ΣV, D, k, ϵ)
+Random.seed!(2)
+U, V, Y, Z = GenerateData(ΣU, ΣV, D, k, ϵ, SNR = true)
 nothing # hide
 ```
 

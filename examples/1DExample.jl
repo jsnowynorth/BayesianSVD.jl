@@ -1,5 +1,5 @@
 
-include("../src/BasisFunctions.jl")
+# include("../src/BasisFunctions.jl")
 
 using BayesianSVD
 using Distances, Plots, Random, Distributions, LinearAlgebra

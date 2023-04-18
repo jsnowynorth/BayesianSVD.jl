@@ -5,9 +5,6 @@ CurrentModule = BayesianSVD
 ```@setup 1d
 using BayesianSVD
 using Distances, Plots, Random, Distributions, LinearAlgebra
-
-# set seed
-Random.seed!(2)
 ```
 
 # Examples
@@ -67,6 +64,7 @@ Plots.plot(p1, p2, layout = l, size = (1000, 400), margin = 5Plots.mm, xlabel = 
 To sample from the Bayesian SVD model we use the `SampleSVD()` function (see `?SampleSVD()` for help). This function requires two parameters - `data::Data` and `pars::Pars`. The parameter function is easy, is requres the one arguemt `data::Data`. The data function requires 4 arguments - (1) the data matrix, (2) covariance matrix `ΩU::KernelFunction` for the U basis matrix, (3) covariance matrix `ΩV::KernelFunction` for the V basis matrix, and (4) the number of basis functions `k`.
 
 ```@example 1d
+k = 5
 ΩU = MaternCorrelation(x, ρ = 3, ν = 3.5, metric = Euclidean()) # U covariance matrix
 ΩV = MaternCorrelation(t, ρ = 3, ν = 3.5, metric = Euclidean()) # V covariance matrix
 data = Data(Z, x, t, k) # data structure
@@ -77,22 +75,32 @@ nothing # hide
 We are now ready to sample from the model. Note, we recommend `show_progress = false` when running in a notebook and `show_progress = true` if you have output print in the REPL. Also, the sampler is slow in the notebooks but considerably faster outside of them.
 
 ```@example 1d
-posterior, pars = SampleSVD(data, pars; nits = 1000, burnin = 500, show_progress = false)
+posterior, pars = SampleSVD(data, pars; nits = 20, burnin = 10, show_progress = true)
 nothing # hide
+```
+
+Because the basis functions are only identifiable up to the sign, we need to orient them.
+```@example 1d
+trsfrm = ones(k)
+for l in 1:k
+    if posteriorCoverage(U[:,l], posterior.U[:,l,:], 0.95) > posteriorCoverage(-U[:,l], posterior.U[:,l,:], 0.95)
+        continue
+    else
+        trsfrm[l] = -1.0
+    end
+end
 ```
 
 We can now plot the output of the spatial basis functions
 ```@example 1d
-Plots.plot(posterior, x, basis = 'U', linewidth = 2, c = [:red :green :purple :blue :orange], xlabel = "Space", ylabel = "Value", title = "Spatial Basis Functions", margin = 5Plots.mm)
-Plots.plot!(x, (U' .* [1, 1, 1, 1, 1])', label = false, color = "black", linewidth = 2)
-Plots.plot!(x, svd(Z).U[:,1:data.k], label = false, linestyle = :dash, linewidth = 2, c = [:red :green :purple :blue :orange])
+Plots.plot(posterior, x, size = (800, 400), basis = 'U', linewidth = 2, c = [:blue :red :magenta :orange :green], tickfontsize = 14, label = false, title = "U")
+Plots.plot!(x, (U' .* trsfrm)', label = false, color = "black", linewidth = 2)
 ```
 
 And the temporal basis functions.
 ```@example 1d
-Plots.plot(posterior, t, basis = 'V', c = [:red :green :purple :blue :orange], xlabel = "Time", ylabel = "Value", title = "Temporal Basis Functions", margin = 5Plots.mm)
-Plots.plot!(t, (V' .* [1, 1, 1, 1, 1])', label = false, color = "black", linewidth = 2)
-Plots.plot!(t, svd(Z).V[:,1:data.k], c = [:red :green :purple :blue :orange], linestyle = :dash, label = false, linewidth = 2)
+Plots.plot(posterior, t, size = (800, 400), basis = 'V',  linewidth = 2, c = [:blue :red :magenta :orange :green], tickfontsize = 14, label = false, title = "V")
+Plots.plot!(t, (V' .* trsfrm)', label = false, color = "black", linewidth = 2)
 ```
 
 Last, we can look at the difference between the target smooth surface, our estimate, and the algorithmic estimate.
