@@ -288,7 +288,7 @@ function update_σ(data::RandomEffectData, pars::RandomEffectPars)
     σ = pars.σ
     y = reshape(pars.U * diagm(pars.D) * pars.V',:)
     z = reshape(data.Z, :)
-    ν = 2
+    ν = 1
     A = 1e6
 
     a = rand(InverseGamma((ν+1)/2, (1/A^2) + ν/σ))
@@ -312,7 +312,7 @@ function update_σU(data::Data, pars::Pars)
     #     σU[i] = rand(InverseGamma(a_hat, b_hat))
     # end
 
-    ν = 2
+    ν = 1
     A = 1e6
     for i in 1:data.k
         a = rand(InverseGamma((ν+1)/2, (1/A^2) + ν/σU[i]))
@@ -337,7 +337,7 @@ function update_σV(data::Data, pars::Pars)
     #     σV[i] = rand(InverseGamma(a_hat, b_hat))
     # end
 
-    ν = 2
+    ν = 1
     A = 1e6
     for i in 1:data.k
         a = rand(InverseGamma((ν+1)/2, (1/A^2) + ν/σV[i]))
