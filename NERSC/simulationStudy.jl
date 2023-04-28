@@ -21,13 +21,13 @@ addprocs(3000) # change in Perlmutter not on local computer!!!!
 #### Sample
 ######################################################################
 
-nReplicates = 100 # change in Perlmutter not on local computer!!!!
+nReplicates = 10 # change in Perlmutter not on local computer!!!!
 kValues = [3, 4, 5, 6, 7]
 SNRValues = [0.5, 1, 2, 5, 10, 100]
 
-# nReplicates = 2
-# kValues = [4, 5, 6]
-# SNRValues = [1, 2, 5]
+nReplicates = 6
+kValues = [4, 5, 6]
+SNRValues = [1, 2, 5]
 
 replicateVector = Vector(range(1, nReplicates))
 simulationParameters = reduce(hcat, reshape([[i, j, k] for i = replicateVector, j = kValues, k = SNRValues], :))'
@@ -128,8 +128,8 @@ simulationParameters = hcat(simulationParameters, Vector(1:nSimulations)) # repl
                     RMSEVA = RMSEVA)
     #
     
-    CSV.write("/Users/JSNorth/Desktop/tempSims/run" * string(i) * ".csv", df)
+    # CSV.write("/Users/JSNorth/Desktop/tempSims/run" * string(i) * ".csv", df)
     # CSV.write("./results/simulationResults/run" * string(i) * ".csv", df)
-    # CSV.write("../results/simulationResults/run" * string(i) * ".csv", df)
+    CSV.write("../results/simulationResults/run" * string(i) * ".csv", df)
 
 end

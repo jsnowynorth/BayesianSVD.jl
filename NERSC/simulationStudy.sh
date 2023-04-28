@@ -30,7 +30,7 @@ export OMP_PROC_BIND=spread
 
 
 ## run the application
-julia simulationStudy.jl
+srun julia simulationStudy.jl
 
 
 echo "### Ending at: $(date) ###"

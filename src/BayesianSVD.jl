@@ -4,6 +4,8 @@
 #### Bayesian Basis Functions
 ######################################################################
 
+__precompile__()
+
 """
     BayesianSVD
 
