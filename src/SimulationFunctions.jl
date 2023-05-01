@@ -54,9 +54,9 @@ function PON(n, k, Σ::Vector{T}) where T <: Correlation
   A = ones(n)
 
   for i in 1:k
-    z = rand(MvNormal(zeros(n), Σ[i].K))
-    Z[:,i] = z - Σ[i].K * A * inv(A' * Σ[i].K * A) * (A'*z)
-    # Z[:,i] = rand(MvNormal(zeros(n), Σ[i].K))
+    # z = rand(MvNormal(zeros(n), Σ[i].K))
+    # Z[:,i] = z - Σ[i].K * A * inv(A' * Σ[i].K * A) * (A'*z)
+    Z[:,i] = rand(MvNormal(zeros(n), Σ[i].K))
   end
 
   X[:,1] = Z[:,1]
@@ -124,8 +124,8 @@ function GenerateData(ΣU::Correlation, ΣV::Correlation, D, k, ϵ; SNR = false)
   if SNR
 
     η = rand(Normal(), n, m)
-    A = ones(n*m)
-    η = reshape(reshape(η, :) - A * inv(A' * A) * (A'*reshape(η, :)), n, m)
+    # A = ones(n*m)
+    # η = reshape(reshape(η, :) - A * inv(A' * A) * (A'*reshape(η, :)), n, m)
   
     σ = sqrt.(var(Y) ./ (ϵ * var(η))) # set the standard deviation
     Z = Y + σ .* η
@@ -133,8 +133,8 @@ function GenerateData(ΣU::Correlation, ΣV::Correlation, D, k, ϵ; SNR = false)
   else
 
     η = rand(Normal(0, sqrt(ϵ)), n, m)
-    A = ones(n*m)
-    η = reshape(reshape(η, :) - ϵ * A * inv(A' * ϵ * A) * (A'*reshape(η, :)), n, m)
+    # A = ones(n*m)
+    # η = reshape(reshape(η, :) - ϵ * A * inv(A' * ϵ * A) * (A'*reshape(η, :)), n, m)
   
     Z = Y + η
 
@@ -156,8 +156,8 @@ function GenerateData(ΣU::Vector{T}, ΣV::Vector{T}, D, k, ϵ; SNR = false) whe
   if SNR
 
     η = rand(Normal(), n, m)
-    A = ones(n*m)
-    η = reshape(reshape(η, :) - A * inv(A' * A) * (A'*reshape(η, :)), n, m)
+    # A = ones(n*m)
+    # η = reshape(reshape(η, :) - A * inv(A' * A) * (A'*reshape(η, :)), n, m)
   
     σ = sqrt.(var(Y) ./ (ϵ * var(η))) # set the standard deviation
     Z = Y + σ .* η
@@ -165,8 +165,8 @@ function GenerateData(ΣU::Vector{T}, ΣV::Vector{T}, D, k, ϵ; SNR = false) whe
   else
 
     η = rand(Normal(0, sqrt(ϵ)), n, m)
-    A = ones(n*m)
-    η = reshape(reshape(η, :) - ϵ * A * inv(A' * ϵ * A) * (A'*reshape(η, :)), n, m)
+    # A = ones(n*m)
+    # η = reshape(reshape(η, :) - ϵ * A * inv(A' * ϵ * A) * (A'*reshape(η, :)), n, m)
   
     Z = Y + η
 
