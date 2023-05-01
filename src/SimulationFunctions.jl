@@ -32,9 +32,9 @@ function PON(n, k, Σ)
     A = ones(n)
 
     for i in 1:k
-      z = rand(MvNormal(zeros(n), Σ.K))
-      Z[:,i] = z - Σ.K * A * inv(A' * Σ.K * A) * (A'*z)
-      # Z[:,i] = rand(MvNormal(zeros(n), Σ.K))
+      # z = rand(MvNormal(zeros(n), Σ.K))
+      # Z[:,i] = z - Σ.K * A * inv(A' * Σ.K * A) * (A'*z)
+      Z[:,i] = rand(MvNormal(zeros(n), Σ.K))
     end
   
     X[:,1] = Z[:,1]
