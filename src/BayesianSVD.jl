@@ -53,9 +53,15 @@ export
     GaussianCorrelation,
     MaternCorrelation,
     SparseCorrelation,
+    # Correlation,
+    # IndependentCorrelation,
+    # DependentCorrelation,
 
     # Parameter and Data
     Pars,
-    Data
+    Data,
+
+    # Posterior concat function
+    Posterior
 
 end

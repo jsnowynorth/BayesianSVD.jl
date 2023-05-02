@@ -75,7 +75,7 @@ nothing # hide
 We are now ready to sample from the model. Note, we recommend `show_progress = false` when running in a notebook and `show_progress = true` if you have output print in the REPL. Also, the sampler is slow in the notebooks but considerably faster outside of them.
 
 ```@example 1d
-posterior, pars = SampleSVD(data, pars; nits = 20, burnin = 10, show_progress = true)
+posterior, pars = SampleSVD(data, pars; nits = 10, burnin = 5, show_progress = false)
 nothing # hide
 ```
 

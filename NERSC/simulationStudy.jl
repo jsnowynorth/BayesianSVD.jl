@@ -8,31 +8,23 @@
 
 # find . -name 'julia-*' -delete
 
+# println(Vector(range(30, 3000, step = 30)) ./ 32)
+# nodes, nReplicates, ntasks
+# hcat(Vector(range(30, 3000, step = 30)) ./ 32, 1:100, Vector(1:100) .* 30)
+
+
+using ClusterManagers
 using Distributed
-# using ClusterManagers
-addprocs(3000) # change in Perlmutter not on local computer!!!!
+# addprocs(6) # change in Perlmutter not on local computer!!!!
 # nprocs()
 
-# addprocs(SlurmManager(180), t="00:10:00")
-# print(nprocs())
-# myid()
+# addprocs(SlurmManager(3000)) # change in Perlmutter not on local computer!!!!
+print(nprocs())
+myid()
 
 ######################################################################
 #### Sample
 ######################################################################
-
-nReplicates = 10 # change in Perlmutter not on local computer!!!!
-kValues = [3, 4, 5, 6, 7]
-SNRValues = [0.5, 1, 2, 5, 10, 100]
-
-nReplicates = 6
-kValues = [4, 5, 6]
-SNRValues = [1, 2, 5]
-
-replicateVector = Vector(range(1, nReplicates))
-simulationParameters = reduce(hcat, reshape([[i, j, k] for i = replicateVector, j = kValues, k = SNRValues], :))'
-nSimulations = size(simulationParameters, 1)
-simulationParameters = hcat(simulationParameters, Vector(1:nSimulations)) # replicate ID, k value, SNR value, seed value
 
 # simulationParameters[:,1] replicate ID
 # simulationParameters[:,2] k value
@@ -40,17 +32,23 @@ simulationParameters = hcat(simulationParameters, Vector(1:nSimulations)) # repl
 # simulationParameters[:,4] seed value
 
 
-# @everywhere using BayesianSVD
-# @everywhere include("../src/BasisFunctions.jl")
 @everywhere using BayesianSVD
 @everywhere using Distances, Random, Distributions, LinearAlgebra
 @everywhere using DataFrames, DataFramesMeta, CSV
 
-# node id
-# cpu id
 
-# result = @sync @distributed (append!) for i in 1:nSimulations
-@sync @distributed for i in 1:nSimulations
+@sync @distributed for i in 1:(nprocs()-1)
+
+
+    nReplicates = 100 # change in Perlmutter not on local computer!!!!
+    kValues = [3, 4, 5, 6, 7]
+    SNRValues = [0.1, 0.5, 1, 2, 5, 10]
+
+    replicateVector = Vector(range(1, nReplicates))
+    simulationParameters = reduce(hcat, reshape([[i, j, k] for i = replicateVector, j = kValues, k = SNRValues], :))'
+    nSimulations = size(simulationParameters, 1)
+    simulationParameters = hcat(simulationParameters, Vector(1:nSimulations)) # replicate ID, k value, SNR value, seed value
+
 
     Random.seed!(Int(simulationParameters[i, 4]))
     # simulated model parameters
@@ -82,7 +80,7 @@ simulationParameters = hcat(simulationParameters, Vector(1:nSimulations)) # repl
     pars = Pars(data, ΩU, ΩV)
 
     # run model
-    posterior, pars = SampleSVD(data, pars, nits = 100, burnin = 50, show_progress = false)
+    posterior, pars = SampleSVD(data, pars, nits = 10000, burnin = 5000, show_progress = false)
 
 
     Yest = [posterior.U[:,:,i] * diagm(posterior.D[:,i]) * posterior.V[:,:,i]' for i in axes(posterior.U, 3)]
@@ -109,9 +107,6 @@ simulationParameters = hcat(simulationParameters, Vector(1:nSimulations)) # repl
     RMSEUA = sqrt(mean(((Utmp[:,1:data.k]' .* trsfrm)' .- svdY.U[:,1:data.k]).^2))
     RMSEVA = sqrt(mean(((Vtmp[:,1:data.k]' .* trsfrm)' .- svdY.V[:,1:data.k]).^2))
 
-    # res = hcat(simulationParameters[i, 1], simulationParameters[i, 2], simulationParameters[i, 3], simulationParameters[i, 4], 
-    #             RMSEData, RMSEU, RMSEV, coverData, coverU, coverV, RMSEDataA, RMSEUA, RMSEVA)
-    # [res]
 
     df = DataFrame(replicate = simulationParameters[i, 1],
                     k = simulationParameters[i, 2],
@@ -128,8 +123,6 @@ simulationParameters = hcat(simulationParameters, Vector(1:nSimulations)) # repl
                     RMSEVA = RMSEVA)
     #
     
-    # CSV.write("/Users/JSNorth/Desktop/tempSims/run" * string(i) * ".csv", df)
-    # CSV.write("./results/simulationResults/run" * string(i) * ".csv", df)
     CSV.write("../results/simulationResults/run" * string(i) * ".csv", df)
 
 end

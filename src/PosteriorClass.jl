@@ -101,8 +101,8 @@ function Posterior(data::MixedEffectData, β_post, U_post, V_post, D_post, σ_po
     σ_hat = mean(σ_post)
     σU_hat = mean(σU_post, dims = 2) 
     σV_hat = mean(σV_post, dims = 2)
-    ρU_hat = mean(ρU_post)
-    ρV_hat = mean(ρV_post)
+    ρU_hat = mean(ρU_post, dims = 2)
+    ρV_hat = mean(ρV_post, dims = 2)
 
     β_hpd = hcat(collect.([hpd(β_post[p, :]) for p in 1:data.p])...)
     U_hpd = hcat(collect.([hpd(U_post[n, k, :]) for n in 1:data.n, k in 1:data.k])...)
@@ -136,8 +136,8 @@ function Posterior(data::RandomEffectData, U_post, V_post, D_post, σ_post, σU_
     σ_hat = mean(σ_post)
     σU_hat = mean(σU_post, dims = 2) 
     σV_hat = mean(σV_post, dims = 2)
-    ρU_hat = mean(ρU_post)
-    ρV_hat = mean(ρV_post)
+    ρU_hat = mean(ρU_post, dims = 2)
+    ρV_hat = mean(ρV_post, dims = 2)
 
     U_hpd = hcat(collect.([hpd(U_post[n, k, :]) for n in 1:data.n, k in 1:data.k])...)
     V_hpd = hcat(collect.([hpd(V_post[m, k, :]) for m in 1:data.m, k in 1:data.k])...)
@@ -160,6 +160,103 @@ function Posterior(data::RandomEffectData, U_post, V_post, D_post, σ_post, σU_
 end
 
 
+########################################################################
+#### functions to combine multiple posterior classes
+########################################################################
+#region
+
+function Posterior(data::MixedEffectData, P::Vector{T}) where T <: MixedEffectPosterior
+    
+    β_post = cat([p.β for p in P]..., dims = 2)
+    U_post = cat([p.U for p in P]..., dims = 3)
+    V_post = cat([p.V for p in P]..., dims = 3)
+    D_post = cat([p.D for p in P]..., dims = 2)
+    σ_post = cat([p.σ for p in P]..., dims = 1)
+    σU_post = cat([p.σU for p in P]..., dims = 2)
+    σV_post = cat([p.σV for p in P]..., dims = 2)
+    ρU_post = cat([p.ρU for p in P]..., dims = 2)
+    ρV_post = cat([p.ρV for p in P]..., dims = 2)
+
+    β_hat = mean(β_post, dims = 2)[:,1]
+    U_hat = mean(U_post, dims = 3)[:,:,1]
+    V_hat = mean(V_post, dims = 3)[:,:,1]
+    D_hat = mean(D_post, dims = 2)[:,1]
+    σ_hat = mean(σ_post)
+    σU_hat = mean(σU_post, dims = 2) 
+    σV_hat = mean(σV_post, dims = 2)
+    ρU_hat = mean(ρU_post)
+    ρV_hat = mean(ρV_post)
+
+    β_hpd = hcat(collect.([hpd(β_post[p, :]) for p in 1:data.p])...)
+    U_hpd = hcat(collect.([hpd(U_post[n, k, :]) for n in 1:data.n, k in 1:data.k])...)
+    V_hpd = hcat(collect.([hpd(V_post[m, k, :]) for m in 1:data.m, k in 1:data.k])...)
+    D_hpd = hcat(collect.([hpd(D_post[k, :]) for k in 1:data.k])...)
+
+    β_lower = β_hpd[1,:]
+    β_upper = β_hpd[2,:]
+
+    U_lower = reshape(U_hpd[1,:], data.n, data.k)
+    U_upper = reshape(U_hpd[2,:], data.n, data.k)
+
+    V_lower = reshape(V_hpd[1,:], data.m, data.k)
+    V_upper = reshape(V_hpd[2,:], data.m, data.k)
+
+    D_lower = D_hpd[1,:]
+    D_upper = D_hpd[2,:]
+
+    MixedEffectPosterior(β_post, U_post, V_post, D_post, σ_post, σU_post, σV_post, ρU_post, ρV_post,
+        β_hat, U_hat, V_hat, D_hat, σ_hat, σU_hat, σV_hat, ρU_hat, ρV_hat,
+        β_lower, β_upper, U_lower, U_upper, V_lower, V_upper, D_lower, D_upper)
+
+end
+
+function Posterior(data::RandomEffectData, P::Vector{T}) where T <: RandomEffectPosterior
+    
+    U_post = cat([p.U for p in P]..., dims = 3)
+    V_post = cat([p.V for p in P]..., dims = 3)
+    D_post = cat([p.D for p in P]..., dims = 2)
+    σ_post = cat([p.σ for p in P]..., dims = 1)
+    σU_post = cat([p.σU for p in P]..., dims = 2)
+    σV_post = cat([p.σV for p in P]..., dims = 2)
+    ρU_post = cat([p.ρU for p in P]..., dims = 2)
+    ρV_post = cat([p.ρV for p in P]..., dims = 2)
+
+    U_hat = mean(U_post, dims = 3)[:,:,1]
+    V_hat = mean(V_post, dims = 3)[:,:,1]
+    D_hat = mean(D_post, dims = 2)[:,1]
+    σ_hat = mean(σ_post)
+    σU_hat = mean(σU_post, dims = 2) 
+    σV_hat = mean(σV_post, dims = 2)
+    ρU_hat = mean(ρU_post, dims = 2)
+    ρV_hat = mean(ρV_post, dims = 2)
+
+    U_hpd = hcat(collect.([hpd(U_post[n, k, :]) for n in 1:data.n, k in 1:data.k])...)
+    V_hpd = hcat(collect.([hpd(V_post[m, k, :]) for m in 1:data.m, k in 1:data.k])...)
+    D_hpd = hcat(collect.([hpd(D_post[k, :]) for k in 1:data.k])...)
+
+    U_lower = reshape(U_hpd[1,:], data.n, data.k)
+    U_upper = reshape(U_hpd[2,:], data.n, data.k)
+
+    V_lower = reshape(V_hpd[1,:], data.m, data.k)
+    V_upper = reshape(V_hpd[2,:], data.m, data.k)
+
+    D_lower = D_hpd[1,:]
+    D_upper = D_hpd[2,:]
+
+    RandomEffectPosterior(U_post, V_post, D_post, σ_post, σU_post, σV_post, ρU_post, ρV_post,
+        U_hat, V_hat, D_hat, σ_hat, σU_hat, σV_hat, ρU_hat, ρV_hat,
+        U_lower, U_upper, V_lower, V_upper, D_lower, D_upper)
+
+
+end
+
+#endregion
+
+
+########################################################################
+#### Plotting functions for posterior
+########################################################################
+#region
 
 Plots.@recipe function f(p::Posterior, x; basis = 'U')
     seriestype  :=  :path
@@ -224,3 +321,8 @@ Plots.@recipe function f(p::Posterior, x, y; basis = 'U')
     end
     
 end
+
+#endregion
+
+
+
