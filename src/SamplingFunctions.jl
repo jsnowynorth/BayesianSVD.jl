@@ -192,10 +192,13 @@ function update_D(data::MixedEffectData, pars::MixedEffectPars)
 
     for i in 1:data.k
 
-        propD = rand(TruncatedNormal(D[i], propSD[i], 0, Inf))
+        # propD = rand(TruncatedNormal(D[i], propSD[i], 0, Inf))
+        propD = rand(truncated(Normal(D[i], propSD[i]), 0, Inf))
         
-        rat = likeD(propD, i, data, pars) + logpdf(TruncatedNormal(propD, propSD[i], 0, Inf), D[i]) - 
-                (likeD(D[i], i, data, pars) + logpdf(TruncatedNormal(D[i], propSD[i], 0, Inf), propD))
+        # rat = likeD(propD, i, data, pars) + logpdf(TruncatedNormal(propD, propSD[i], 0, Inf), D[i]) - 
+        #         (likeD(D[i], i, data, pars) + logpdf(TruncatedNormal(D[i], propSD[i], 0, Inf), propD))
+        rat = likeD(propD, i, data, pars) + logpdf(truncated(Normal(propD, propSD[i]), 0, Inf), D[i]) - 
+                (likeD(D[i], i, data, pars) + logpdf(truncated(Normal(D[i], propSD[i]), 0, Inf), propD))
 
         if log(rand(Uniform())) < rat
             D[i] = propD
@@ -219,10 +222,13 @@ function update_D(data::RandomEffectData, pars::RandomEffectPars)
 
     for i in 1:data.k
 
-        propD = rand(TruncatedNormal(D[i], propSD[i], 0, Inf))
+        # propD = rand(TruncatedNormal(D[i], propSD[i], 0, Inf))
+        propD = rand(truncated(Normal(D[i], propSD[i]), 0, Inf))
         
-        rat = likeD(propD, i, data, pars) + logpdf(TruncatedNormal(propD, propSD[i], 0, Inf), D[i]) - 
-                (likeD(D[i], i, data, pars) + logpdf(TruncatedNormal(D[i], propSD[i], 0, Inf), propD))
+        # rat = likeD(propD, i, data, pars) + logpdf(TruncatedNormal(propD, propSD[i], 0, Inf), D[i]) - 
+        #         (likeD(D[i], i, data, pars) + logpdf(TruncatedNormal(D[i], propSD[i], 0, Inf), propD))
+        rat = likeD(propD, i, data, pars) + logpdf(truncated(Normal(propD, propSD[i]), 0, Inf), D[i]) - 
+                (likeD(D[i], i, data, pars) + logpdf(truncated(Normal(D[i], propSD[i]), 0, Inf), propD))
 
         if log(rand(Uniform())) < rat
             D[i] = propD
@@ -369,7 +375,8 @@ function update_ρU(data::Data, pars::Pars, Ω::T) where T <: DependentCorrelati
 
     for i in 1:data.k
         propsd = pars.propSU[i]
-        ρprop = rand(TruncatedNormal(pars.ΩU[i].ρ, propsd, 0, maximum(pars.ΩU[1].d)/2))
+        # ρprop = rand(TruncatedNormal(pars.ΩU[i].ρ, propsd, 0, maximum(pars.ΩU[1].d)/2))
+        ρprop = rand(truncated(Normal(pars.ΩU[i].ρ, propsd), 0, maximum(pars.ΩU[1].d)/2))
         Cprop = copy(pars.ΩU[i])
         Cprop.ρ = ρprop
         Cprop = updateCorrelation(Cprop)
@@ -378,11 +385,10 @@ function update_ρU(data::Data, pars::Pars, Ω::T) where T <: DependentCorrelati
         Σprop =  pars.σU[i] * Hermitian(pars.NU[:,:,i]' * Cprop.K * pars.NU[:,:,i])
         Σcurr = pars.σU[i] * pars.NΩUN[:,:,i]
         
-        rat = ρLike(pars.UZ[:,i], pars.D[i], Σprop) + logpdf(ρprior, ρprop) + logpdf(TruncatedNormal(ρprop, propsd, 0, Inf), pars.ΩU[i].ρ) - 
-                (ρLike(pars.UZ[:,i], pars.D[i], Σcurr) + logpdf(ρprior, pars.ΩU[i].ρ) + logpdf(TruncatedNormal(pars.ΩU[i].ρ, propsd, 0, Inf), ρprop))
-
-        # rat = ρLike(pars.UZ[:,i], Cprop, pars.NU[:,:,i], pars.σU[i], pars.D[i]) + logpdf(ρprior, ρprop) + logpdf(TruncatedNormal(ρprop, propsd, 0, Inf), pars.ΩU[i].ρ) - 
-        #         (ρLike(pars.UZ[:,i], pars.ΩU[i], pars.NU[:,:,i], pars.σU[i], pars.D[i]) + logpdf(ρprior, pars.ΩU[i].ρ) + logpdf(TruncatedNormal(pars.ΩU[i].ρ, propsd, 0, Inf), ρprop))
+        # rat = ρLike(pars.UZ[:,i], pars.D[i], Σprop) + logpdf(ρprior, ρprop) + logpdf(TruncatedNormal(ρprop, propsd, 0, Inf), pars.ΩU[i].ρ) - 
+        #         (ρLike(pars.UZ[:,i], pars.D[i], Σcurr) + logpdf(ρprior, pars.ΩU[i].ρ) + logpdf(TruncatedNormal(pars.ΩU[i].ρ, propsd, 0, Inf), ρprop))
+        rat = ρLike(pars.UZ[:,i], pars.D[i], Σprop) + logpdf(ρprior, ρprop) + logpdf(truncated(Normal(ρprop, propsd), 0, Inf), pars.ΩU[i].ρ) - 
+                (ρLike(pars.UZ[:,i], pars.D[i], Σcurr) + logpdf(ρprior, pars.ΩU[i].ρ) + logpdf(truncated(Normal(pars.ΩU[i].ρ, propsd), 0, Inf), ρprop))
 
         
         if log(rand(Uniform())) < rat
@@ -404,7 +410,8 @@ function update_ρV(data::Data, pars::Pars, Ω::T) where T <: DependentCorrelati
 
     for i in 1:data.k
         propsd = pars.propSV[i]
-        ρprop = rand(TruncatedNormal(pars.ΩV[i].ρ, propsd, 0, maximum(pars.ΩV[1].d)/2))
+        # ρprop = rand(TruncatedNormal(pars.ΩV[i].ρ, propsd, 0, maximum(pars.ΩV[1].d)/2))
+        ρprop = rand(truncated(Normal(pars.ΩV[i].ρ, propsd), 0, maximum(pars.ΩV[1].d)/2))
         Cprop = copy(pars.ΩV[i])
         Cprop.ρ = ρprop
         Cprop = updateCorrelation(Cprop)
@@ -413,11 +420,10 @@ function update_ρV(data::Data, pars::Pars, Ω::T) where T <: DependentCorrelati
         Σprop =  pars.σV[i] * Hermitian(pars.NV[:,:,i]' * Cprop.K * pars.NV[:,:,i])
         Σcurr = pars.σV[i] * pars.NΩVN[:,:,i]
         
-        rat = ρLike(pars.VZ[:,i], pars.D[i], Σprop) + logpdf(ρprior, ρprop) + logpdf(TruncatedNormal(ρprop, propsd, 0, Inf), pars.ΩV[i].ρ) - 
-                (ρLike(pars.VZ[:,i], pars.D[i], Σcurr) + logpdf(ρprior, pars.ΩV[i].ρ) + logpdf(TruncatedNormal(pars.ΩV[i].ρ, propsd, 0, Inf), ρprop))
-
-        # rat = ρLike(pars.VZ[:,i], Cprop, pars.NV[:,:,i], pars.σV[i], pars.D[i]) + logpdf(ρprior, ρprop) + logpdf(TruncatedNormal(ρprop, propsd, 0, Inf), pars.ΩV[i].ρ) - 
-                # (ρLike(pars.VZ[:,i], pars.ΩV[i], pars.NV[:,:,i], pars.σV[i], pars.D[i]) + logpdf(ρprior, pars.ΩV[i].ρ) + logpdf(TruncatedNormal(pars.ΩV[i].ρ, propsd, 0, Inf), ρprop))
+        # rat = ρLike(pars.VZ[:,i], pars.D[i], Σprop) + logpdf(ρprior, ρprop) + logpdf(TruncatedNormal(ρprop, propsd, 0, Inf), pars.ΩV[i].ρ) - 
+        #         (ρLike(pars.VZ[:,i], pars.D[i], Σcurr) + logpdf(ρprior, pars.ΩV[i].ρ) + logpdf(TruncatedNormal(pars.ΩV[i].ρ, propsd, 0, Inf), ρprop))
+        rat = ρLike(pars.VZ[:,i], pars.D[i], Σprop) + logpdf(ρprior, ρprop) + logpdf(truncated(Normal(ρprop, propsd), 0, Inf), pars.ΩV[i].ρ) - 
+                (ρLike(pars.VZ[:,i], pars.D[i], Σcurr) + logpdf(ρprior, pars.ΩV[i].ρ) + logpdf(truncated(Normal(pars.ΩV[i].ρ, propsd), 0, Inf), ρprop))
 
         if log(rand(Uniform())) < rat
             pars.ΩV[i] = Cprop
