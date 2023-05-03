@@ -18,6 +18,7 @@
 
 #### load packages
 using BayesianSVD
+using Distances
 using Missings
 using Statistics
 using DataFrames, DataFramesMeta, Chain
@@ -30,7 +31,9 @@ using JLD2
 
 #### source file name
 fileName = "../data/HadISST_sst.nc"
-# fileName = "data/HadCRUT3.nc"
+# fileName = "/Users/JSNorth/Documents/GitHub/BayesianSpatialBasisFunctions/data/HadISST_sst.nc"
+
+
 
 #### netcdf info
 ncinfo(fileName)
@@ -187,7 +190,7 @@ t = convert(Vector{Float64}, Vector(1:nT))
 Z = convert(Matrix{Float64}, Z)
 
 k = 3
-ΩU = MaternCorrelation(locs_obs, ρ = ρ = maximum(Distances.pairwise(Haversine(6371), locs_obs'))/100, ν = 3.5, metric = Haversine(6371))
+ΩU = MaternCorrelation(locs_obs, ρ = maximum(Distances.pairwise(Haversine(6371), locs_obs'))/100, ν = 3.5, metric = Haversine(6371))
 ΩV = IdentityCorrelation(t)
 data = Data(Z, locs_obs, t, k)
 pars = Pars(data, ΩU, ΩV)
@@ -197,28 +200,6 @@ posterior, pars = SampleSVD(data, pars; nits = 500, burnin = 500)
 
 jldsave("../results/PDO_1.jld2"; data, pars, posterior)
 # data, pars, posterior = jldopen("../results/PDOResults/PDO.jld2")
-
-# jldsave("../results/PDO.jld2"; posterior, pars)
-# loadedFile = jldopen("../results/PDO.jld2")
-
-# pars = update_D(data, pars)
-# pars = update_U(data, pars)
-# pars = update_V(data, pars)
-# pars = update_σ(data, pars)
-# pars = update_σU(data, pars)
-# pars = update_σV(data, pars)
-
-
-# U = rejoinData(pars.U, location_inds, sea_inds)
-
-# l = Plots.@layout [a b c]
-# p11 = Plots.contourf(lon, lat, reshape(U[:,1], nlat, nlon), title = "EOF 1")
-# p12 = Plots.contourf(lon, lat, reshape(U[:,2], nlat, nlon), title = "EOF 2")
-# p13 = Plots.contourf(lon, lat, reshape(U[:,3], nlat, nlon), title = "EOF 3")
-# Plots.plot(p11, p12, p13, layout = l, size = (1200, 400))
-
-
-# Plots.plot(pars.V[1600:end,1])
 
 
 

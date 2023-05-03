@@ -9,8 +9,8 @@ abstract type Data end
 struct MixedEffectData <: Data
     Z::Array{Float64}
     X::Array{Float64}
-    ulocs::Vector{Float64}
-    vlocs::Vector{Float64}
+    ulocs::Array{Float64}
+    vlocs::Array{Float64}
     n::Int
     m::Int
     p::Int
@@ -19,8 +19,8 @@ end
 
 struct RandomEffectData <: Data
     Z::Array{Float64}
-    ulocs::Vector{Float64}
-    vlocs::Vector{Float64}
+    ulocs::Array{Float64}
+    vlocs::Array{Float64}
     n::Int
     m::Int
     k::Int

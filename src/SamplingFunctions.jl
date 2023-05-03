@@ -646,8 +646,8 @@ function SampleSVD(data::RandomEffectData, pars::RandomEffectPars; nits = 1000, 
         pars = update_σ(data, pars)
         pars = update_σU(data, pars)
         pars = update_σV(data, pars)
-        pars = update_ρU(data, pars, pars.ΩU[1])
-        pars = update_ρV(data, pars, pars.ΩV[1])
+        # pars = update_ρU(data, pars, pars.ΩU[1])
+        # pars = update_ρV(data, pars, pars.ΩV[1])
 
         # D acceptance rate
         Daccept_post[:,i] = pars.Daccept
@@ -718,8 +718,8 @@ function SampleSVD(data::RandomEffectData, pars::RandomEffectPars; nits = 1000, 
         pars = update_σ(data, pars)
         pars = update_σU(data, pars)
         pars = update_σV(data, pars)
-        pars = update_ρU(data, pars, pars.ΩU[1])
-        pars = update_ρV(data, pars, pars.ΩV[1])
+        # pars = update_ρU(data, pars, pars.ΩU[1])
+        # pars = update_ρV(data, pars, pars.ΩV[1])
     
         U_post[:,:,i] = pars.U
         V_post[:,:,i] = pars.V
