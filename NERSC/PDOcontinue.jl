@@ -14,19 +14,11 @@ using JLD2
 #### Read In Data
 ######################################################################
 
-fileNumber = ARGS[1] # should be the next number in line (i.e., if PDO_2.jl exists, then should be 3)
+fileNumber = parse(Int64, ARGS[1]) # should be the next number in line (i.e., if PDO_2.jl exists, then should be 3)
 
-data, pars, posterior = jldopen("../results/PDOResults/PDO_" * string(fileNumber-1) * ".jld2")
+@load "../results/PDOResults/PDO_" * string(fileNumber - 1) * ".jld2" data pars posterior
 
+posterior, pars = SampleSVD(data, pars; nits = 1000, burnin = 1000) # used to keep continue burnin
+# posterior, pars = SampleSVD(data, pars; nits = 1000, burnin = 0) # used to sample
 
-posterior, pars = SampleSVD(data, pars; nits = 500, burnin = 500) # used to keep continue burnin
-posterior, pars = SampleSVD(data, pars; nits = 500, burnin = 0) # used to sample
-
-
-jldsave("../results/PDOResults/PDO_" * string(fileNumber) * ".jld2"; data, pars, posterior)
-# data, pars, posterior = jldopen("../results/PDOResults/PDO.jld2")
-
-
-
-#endregion
-
+@save "../results/PDOResults/PDO_" * string(fileNumber) * ".jld2" data pars posterior

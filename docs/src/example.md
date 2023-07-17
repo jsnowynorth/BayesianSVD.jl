@@ -34,7 +34,7 @@ D = [40, 20, 10, 5, 2] # sqrt of eigenvalues
 k = 5 # number of basis functions 
 ϵ = 2 # noise
 
-Random.seed!(2)
+Random.seed!(3)
 U, V, Y, Z = GenerateData(ΣU, ΣV, D, k, ϵ, SNR = true)
 nothing # hide
 ```
@@ -95,13 +95,17 @@ We can now plot the output of the spatial basis functions
 ```@example 1d
 Plots.plot(posterior, x, size = (800, 400), basis = 'U', linewidth = 2, c = [:blue :red :magenta :orange :green], tickfontsize = 14, label = false, title = "U")
 Plots.plot!(x, (U' .* trsfrm)', label = false, color = "black", linewidth = 2)
+nothing # hide
 ```
+![Ubasis](./assets/Ubasis.png)
 
 And the temporal basis functions.
 ```@example 1d
 Plots.plot(posterior, t, size = (800, 400), basis = 'V',  linewidth = 2, c = [:blue :red :magenta :orange :green], tickfontsize = 14, label = false, title = "V")
 Plots.plot!(t, (V' .* trsfrm)', label = false, color = "black", linewidth = 2)
+nothing # hide
 ```
+![Vbasis](./assets/Vbasis.png) 
 
 Last, we can look at the difference between the target smooth surface, our estimate, and the algorithmic estimate.
 
@@ -121,4 +125,6 @@ p4 = Plots.contourf(t, x, Z_hat .- Y, title = "Y Hat - Truth", c = :balance, cli
 p5 = Plots.contourf(t, x, Z, title = "Observed", c = :balance, clim = lims)
 p6 = Plots.contourf(t, x, svdZ .- Y, title = "Algorithm - Truth", c = :balance, clim = (-0.2, 0.2))
 Plots.plot(p1, p2, p3, p4, p5, p6, layout = l, size = (1400, 600))
+nothing # hide
 ```
+![surfaceEstimate](./assets/surfaceEstimate.png)

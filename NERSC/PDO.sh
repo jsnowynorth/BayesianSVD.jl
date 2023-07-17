@@ -10,7 +10,7 @@
 #SBATCH -J PDO                                  # name of job
 #SBATCH --mail-user=jsnorth@lbl.gov             # email
 #SBATCH --mail-type=ALL                         # when to email notification
-#SBATCH -t 0-12:00:00                           # time in days-hours:minutes:seconds
+#SBATCH -t 0-04:00:00                           # time in days-hours:minutes:seconds
 #SBATCH -A m1517                                # project to charge for the job
 #--------------------------------------------------------------------------------
 

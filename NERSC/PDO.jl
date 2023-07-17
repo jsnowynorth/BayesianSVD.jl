@@ -28,10 +28,11 @@ using JLD2
 ######################################################################
 #### Read In Data
 ######################################################################
+#region
 
 #### source file name
-fileName = "../data/HadISST_sst.nc"
-# fileName = "/Users/JSNorth/Documents/GitHub/BayesianSpatialBasisFunctions/data/HadISST_sst.nc"
+# fileName = "../data/HadISST_sst.nc"
+fileName = "/Users/JSNorth/Documents/GitHub/BayesianSpatialBasisFunctions/data/HadISST_sst.nc"
 
 
 
@@ -50,6 +51,7 @@ sst = replace(sst, -1000.0 => missing)
 sst = reshape(permutedims(sst, (2,1,3)), length(lat), length(lon), length(T))
 sst = sst[end:-1:1,:,:]
 
+#endregion
 
 ######################################################################
 #### Detrend Data
@@ -129,10 +131,11 @@ sst = sstFin
 #### subset area
 latselects = 20.0 .<= lat .<= 60.0
 lonselects = (110 .<= lon) .| (lon .<= -100.0)
-newlons = Vector(vcat(range(160, 359, step = 1), range(0, 159, step = 1)))
+newlons = Vector(vcat(range(180, 359, step = 1), range(0, 179, step = 1)))
 
 lonOrig = lon
 latOrig = lat
+
 
 sst = cat(sst[:,convert(BitVector,vcat(zeros(180),lonselects[181:360])),:], sst[:,convert(BitVector,vcat(lonselects[1:180],zeros(180))),:], dims = 2)
 sst = sst[reverse(latselects),:,:]
@@ -152,10 +155,15 @@ mths = Dates.month.(dts) # get months to use as identifiers
 #### remove missing data
 land_id = [sum(isequal.(sst[i, j, :], missing)) > 0 ? false : true for i in axes(sst, 1), j in axes(sst, 2)]
 coords = hcat(collect.(vec(collect(Base.product(lon, lat))))...)
-location_inds = DataFrame(x = coords[1, :], y = coords[2, :], sea = reshape(land_id, :))
+location_inds = DataFrame(x = coords[1, :], y = coords[2, :], sea = reshape(land_id', :))
 sea_inds = @chain location_inds begin
     @subset(:sea .== true)
 end
+
+
+# Plots.scatter(location_inds[!,:x], location_inds[!,:y], group = location_inds[!,:sea], label = false)
+
+
 
 #### function to rejoin data to full data with missings
 function rejoinData(Z, location_inds, sea_inds)
@@ -172,7 +180,9 @@ function rejoinData(Z, location_inds, sea_inds)
 
 end
 
-Z = reshape(sst[:, :, :], :, length(dts))  
+# permutedims(sst[:, :, :], (2, 1, 3))
+Z = reshape(permutedims(sst, (2, 1, 3)), :, length(dts))
+# Z = reshape(sst[:, :, :], :, length(dts))  
 Z = Array{Float32,2}(Z[location_inds[:, :sea], :])
 
 #endregion
@@ -190,7 +200,7 @@ t = convert(Vector{Float64}, Vector(1:nT))
 Z = convert(Matrix{Float64}, Z)
 
 k = 3
-ΩU = MaternCorrelation(locs_obs, ρ = maximum(Distances.pairwise(Haversine(6371), locs_obs'))/100, ν = 3.5, metric = Haversine(6371))
+ΩU = MaternCorrelation(locs_obs, ρ = maximum(Distances.pairwise(Haversine(6371), locs_obs'))/25, ν = 3.5, metric = Haversine(6371))
 ΩV = IdentityCorrelation(t)
 data = Data(Z, locs_obs, t, k)
 pars = Pars(data, ΩU, ΩV)
@@ -198,7 +208,7 @@ pars = Pars(data, ΩU, ΩV)
 posterior, pars = SampleSVD(data, pars; nits = 500, burnin = 500)
 
 
-jldsave("../results/PDO_1.jld2"; data, pars, posterior)
+jldsave("../results/PDOResults/PDO_1.jld2"; data, pars, posterior)
 # data, pars, posterior = jldopen("../results/PDOResults/PDO.jld2")
 
 
