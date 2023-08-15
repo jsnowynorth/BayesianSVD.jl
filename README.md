@@ -5,4 +5,4 @@
 [![Build Status](https://github.com/jsnowynorth/BayesianSVD.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/jsnowynorth/BayesianSVD.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![codecov.io](http://codecov.io/github/jsnowynorth/BayesianSVD.jl/coverage.svg?branch=main)](http://codecov.io/github/jsnowynorth/BayesianSVD.jl?branch=main)
 
-A package for implimenting the Bayesian SVD model from xxxx.
+A package for implimenting the Bayesian SVD model from ``A flexible class of priors for conducting posterior inference on structured orthonormal matrices'', which can be found at https://arxiv.org/abs/2307.13627.
