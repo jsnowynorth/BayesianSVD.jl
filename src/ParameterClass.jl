@@ -104,12 +104,13 @@ pars = Pars(data, ΩU, ΩV)
 function Pars(data::MixedEffectData, ΩU::Correlation, ΩV::Correlation)
 
     # linear parameters
-    β = zeros(data.p)
-    M = data.X * β
-    m = reshape(M, :)
+    # β = zeros(data.p)
+    β = inv(data.X' * data.X) * data.X' * reshape(data.Z,:)
+    m = data.X * β
+    M = reshape(m, data.n, data.m)
 
     # inital values for basis functions
-    svdY = svd(data.Z)
+    svdY = svd(data.Z .- M)
     U = svdY.U[:,1:data.k]
     V = svdY.V[:,1:data.k]
 

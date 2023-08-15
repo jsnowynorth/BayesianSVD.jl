@@ -43,6 +43,7 @@ export
     # helper functions
     posteriorCoverage,
     hpd,
+    CreateDesignMatrix,
 
     # overall sample function
     SampleSVD,

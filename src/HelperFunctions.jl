@@ -125,3 +125,57 @@ function posteriorCoverage(c::Matrix{Float64}, d::Array{Array{Float64, 2}, 1}, p
   end
   
 end
+
+
+
+
+
+"""
+    CreateDesignMatrix(n::Int, m::Int, Xt, Xs, Xst; intercept = true)
+
+Creates a design matrix.
+
+See also [`Data`](@ref), [`Posterior`](@ref), and [`SampleSVD`](@ref).
+
+# Arguments
+- n::Int: Number of spatial locations
+- m::Int: Number of temporal locations
+- Xt: Time only covariates of dimension m x pₘ
+- Xs: Spatial only covariates of dimension n x pₙ
+- Xst: Space-time only covariates of dimension mn x pₘₙ
+- intercept = true: should a global intercept be included
+
+# Returns
+- X: Design matrix of dimension mn x (pₘ + pₙ + pₘₙ) or mn x (1 + pₘ + pₙ + pₘₙ)
+
+
+
+# Examples
+```
+m = 75
+n = 50
+
+#### Spatial
+Xs = hcat(sin.((2*pi .* x) ./ 10), cos.((2*pi .* x) ./ 10))
+
+#### Temporal
+Xt = hcat(Vector(t))
+
+#### Spatio-temporal
+Xst = rand(Normal(), n*m, 2)
+
+#### Create design matrix
+CreateDesignMatrix(n, m, Xt, Xs, Xst, intercept = true)
+``` 
+"""
+function CreateDesignMatrix(n::Int, m::Int, Xt, Xs, Xst; intercept = true)
+    
+    if intercept
+        X = hcat(ones(n*m), repeat(Xs, outer = (m,1)), repeat(Xt, inner = (n,1)), Xst)
+    else
+        X = hcat(repeat(Xs, outer = (m,1)), repeat(Xt, inner = (n,1)), Xst)
+        # X = hcat(repeat(Xs, inner = (m,1)), repeat(Xt, outer = (n,1)), Xst)
+    end
+
+    return X
+end
