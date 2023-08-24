@@ -1,7 +1,5 @@
 # BayesianSVD.jl
 
-<img src="./examples/logo.png" alt="drawing" width="200"/>
-
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://jsnowynorth.github.io/BayesianSVD.jl/stable/)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://jsnowynorth.github.io/BayesianSVD.jl/dev/)
 [![Build Status](https://github.com/jsnowynorth/BayesianSVD.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/jsnowynorth/BayesianSVD.jl/actions/workflows/CI.yml?query=branch%3Amain)
@@ -13,3 +11,6 @@ To install the package, clone the repository from GitHub and place it in your `/
 julia> ] dev .
 ```
 This will make the package callable via the `using BayesianSVD` command.
+
+
+<img src="./examples/logo.png" alt="drawing" width="500"/>
