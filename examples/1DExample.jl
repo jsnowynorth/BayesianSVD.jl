@@ -226,7 +226,7 @@ k = 5
 data = Data(Z, x, t, k)
 pars = Pars(data, ΩU, ΩV)
 
-posterior, pars = SampleSVD(data, pars; nits = 1000, burnin = 500)
+posterior, pars = SampleSVD(data, pars; nits = 10000, burnin = 5000)
 
 
 posterior.D_hat
@@ -536,3 +536,98 @@ g
 
 #endregion
 
+########################################################################
+#### Recreate data visual but with UQ estimates
+########################################################################
+#region
+
+colorlist = [:blue, :red, :magenta, :orange, :green]
+transparencyValue = 0.3
+colorlistT = [(:blue, transparencyValue), (:red, transparencyValue), (:magenta, transparencyValue), (:orange, transparencyValue), (:green, transparencyValue)]
+nsteps = 20
+nticks = 7
+LW = 3
+
+
+##################
+#### basis function plot
+##################
+# set up plot
+g = CairoMakie.Figure(;resolution = (1000, 700), linewidth = 5)
+ax11 = Axis(g[1,1], limits = ((0, 5), (0, 5)), xgridvisible = false, ygridvisible = false)
+ax12 = Axis(g[1,2], yticks = [-0.3, -0.15, 0, 0.15, 0.3], limits = ((0, 10),(-0.36, 0.42)), xgridvisible = false, ygridvisible = false)
+ax22 = Axis(g[2,2], limits = ((0,10), (0, 10)), yaxisposition = :right, xgridvisible = false, ygridvisible = false)
+ax21 = Axis(g[2,1], xticks = [-0.35, -0.17, 0, 0.17, 0.35], xticklabelrotation = -pi/5, limits = ((-0.28, 0.2), (-5, 5)), xgridvisible = false, ygridvisible = false)
+linkyaxes!(ax22, ax21)
+linkxaxes!(ax22, ax12)
+g
+
+
+# plot the D Matrix
+# Dlabels = [L"\textbf{d}_{%$i, %$i}" for i in 1:5]
+# Dlabels = ["(" * string(round(posterior.D_lower[i], digits = 3)) * ", " * string(round(posterior.D_upper[i], digits = 3)) * ")" for i in 1:5]
+Dlabels = [L"(\textbf{d}_{%$i, %$i}^L, \textbf{d}_{%$i, %$i}^U)" for i in 1:5]
+
+for i in 1:5
+    CairoMakie.text!(ax11, 0.75*(i-1), 5-i, text = Dlabels[i], fontsize = 28, color = colorlist[i])
+end
+g
+
+
+
+# plot time basis functions
+CairoMakie.series!(ax12, t, posterior.V_hat', labels = Dlabels, color = colorlist, linewidth = LW)
+CairoMakie.xlims!(ax12, low = 0, high = 10)
+for i in 1:5
+    CairoMakie.band!(ax12, t, posterior.V_lower[:,i], posterior.V_upper[:,i], color = colorlistT[i])
+end
+g
+
+Point2f.(posterior.U_lower[:,i], x)
+# plot spatial basis functions
+for i in axes(U, 2)
+    CairoMakie.lines!(ax21, posterior.U_hat[:,i], x, label = Dlabels[i], color = colorlist[i], linewidth = LW)
+    CairoMakie.band!(ax21, Point2f.(posterior.U_lower[:,i], x), Point2f.(posterior.U_upper[:,i], x), color = colorlistT[i])
+end
+CairoMakie.ylims!(ax21, low = -5, high = 5)
+g
+
+
+
+# contour plot
+crange = (-1.05, 1.05).*maximum(abs, Z)
+hm = CairoMakie.contourf!(ax22, t, x, Z', 
+    colormap = :balance, colorrange = crange,
+    levels = range(crange[1], crange[2], step = (crange[2]-crange[1])/nsteps))
+
+#
+# CairoMakie.Colorbar(g[1:2,3], hm, ticks = round.(range(crange[1], crange[2], length = nticks), digits = 3))
+g
+
+
+CairoMakie.hideydecorations!(ax11, grid = false)
+CairoMakie.hidexdecorations!(ax11, grid = false)
+CairoMakie.hideydecorations!(ax12, grid = false)
+CairoMakie.hidexdecorations!(ax12, grid = false)
+CairoMakie.hidexdecorations!(ax21, grid = false)
+CairoMakie.hideydecorations!(ax21, grid = false)
+CairoMakie.hidexdecorations!(ax22, grid = false)
+CairoMakie.hideydecorations!(ax22, grid = false)
+g
+
+
+# size the columns and rows
+colsize!(g.layout, 1, Fixed(275))
+rowsize!(g.layout, 1, Fixed(225))
+g
+
+# spacing the columns and rows
+colgap!(g.layout, 1, 15)
+rowgap!(g.layout, 1, 15)
+g
+
+
+save("examples/logo.png", g)
+
+
+#endregion
