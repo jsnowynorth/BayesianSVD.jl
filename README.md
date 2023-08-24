@@ -6,3 +6,8 @@
 [![codecov.io](http://codecov.io/github/jsnowynorth/BayesianSVD.jl/coverage.svg?branch=main)](http://codecov.io/github/jsnowynorth/BayesianSVD.jl?branch=main)
 
 A package for implimenting the Bayesian SVD model from ``A flexible class of priors for conducting posterior inference on structured orthonormal matrices'', which can be found at https://arxiv.org/abs/2307.13627.
+To install the package, clone the repository from GitHub and place it in your `/.julia/dev/` folder, navigate to the folder, and run 
+```
+julia> ] dev .
+```
+This will make the package callable via the `using BayesianSVD` command.
