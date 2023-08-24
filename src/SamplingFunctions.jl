@@ -5,7 +5,7 @@
 #### Update β
 function update_β(data::MixedEffectData, pars::MixedEffectPars)
 
-    Ztilde = reshape(data.Z - pars.U * diagm(pars.D) * pars.V', :)
+    Ztilde = reshape(data.Z - data.Ps * pars.U * diagm(pars.D) * pars.V' * data.Pt, :)
     m = (1/pars.σ) * data.X' * Ztilde
     S = (1/pars.σ) * data.X' * data.X + diagm(1/100*ones(data.p))
 
@@ -26,13 +26,14 @@ function update_U(data::MixedEffectData, pars::MixedEffectPars)
     for i in 1:data.k
         inds = i .∉ Vector(1:data.k)
         N = nullspace(U[:,inds]')
-        E = data.Z - pars.M - U[:,inds] * diagm(pars.D[inds]) * pars.V[:,inds]'
+        E = data.Z - pars.M - data.Ps * U[:,inds] * diagm(pars.D[inds]) * pars.V[:,inds]' * data.Pt
 
         NON = Hermitian(N' * pars.ΩU[i].K * N)
         NONinv = inv(NON)
         
-        m = pars.D[i] * (1/pars.σ) * N' * E * pars.V[:,i]
-        S = pars.D[i]^2 * (1/pars.σU[i]) .* NONinv + pars.D[i]^2 * (1/pars.σ) * diagm(ones(data.n - data.k + 1))
+        m = pars.D[i] * (1/pars.σ) * N' * data.Ps * E * data.Pt * pars.V[:,i]
+        # S = pars.D[i]^2 * (1/pars.σU[i]) .* NONinv + pars.D[i]^2 * (1/pars.σ) * diagm(ones(data.n - data.k + 1))
+        S = pars.D[i]^2 * (1/pars.σU[i]) .* NONinv + pars.D[i]^2 * (1/pars.σ) * pars.V[:,i]' * data.Pt * pars.V[:,i] * N' * data.Ps * N
 
         UZ[:,i] = rand(MvNormalCanon(m, Hermitian(S)))
         UZ[:,i] = UZ[:,i] / norm(UZ[:,i])
@@ -89,13 +90,14 @@ function update_V(data::MixedEffectData, pars::MixedEffectPars)
     for i in 1:data.k
         inds = i .∉ Vector(1:data.k)
         N = nullspace(V[:,inds]')
-        E = data.Z - pars.M - pars.U[:,inds] * diagm(pars.D[inds]) * V[:,inds]'
+        E = data.Z - pars.M - data.Ps * pars.U[:,inds] * diagm(pars.D[inds]) * V[:,inds]' * data.Pt
 
         NON = Hermitian(N' * pars.ΩV[i].K * N)
         NONinv = inv(NON)
         
-        m = pars.D[i] * (1/pars.σ) * N' * E' * pars.U[:,i]
-        S = pars.D[i]^2 * (1/pars.σV[i]) .* NONinv + pars.D[i]^2 * (1/pars.σ) * diagm(ones(data.m - data.k + 1))
+        m = pars.D[i] * (1/pars.σ) * N' * data.Pt * E' * data.Ps * pars.U[:,i]
+        # S = pars.D[i]^2 * (1/pars.σV[i]) .* NONinv + pars.D[i]^2 * (1/pars.σ) * diagm(ones(data.m - data.k + 1))
+        S = pars.D[i]^2 * (1/pars.σV[i]) .* NONinv + pars.D[i]^2 * (1/pars.σ) * pars.U[:,i]' * data.Ps * pars.U[:,i] * N' * data.Pt * N
 
         VZ[:,i] = rand(MvNormalCanon(m, Hermitian(S)))
         VZ[:,i] = VZ[:,i] / norm(VZ[:,i])
@@ -155,11 +157,11 @@ function likeD(d, i, data::MixedEffectData, pars::MixedEffectPars)
     SigVinv = pars.NΩVNinv[:,:,i]./pars.σV[i]
     SigUdet = logdet(pars.NΩUN[:,:,i])
     SigVdet = logdet(pars.NΩVN[:,:,i])
-    
+
 
     ll = (-((data.n-data.k+1)/2) * log(2*pi*pars.σU[i]) - (1/2) * SigUdet - (1/2)*(d .* pars.UZ[:,i])' * SigUinv * (d .* pars.UZ[:,i]) + (data.n-data.k-1) * log(d) ) +
     (-((data.m-data.k+1)/2) * log(2*pi*pars.σV[i]) - (1/2) * SigVdet - (1/2)*(d .* pars.VZ[:,i])' * SigVinv * (d .* pars.VZ[:,i]) + (data.m-data.k-1) * log(d) ) +
-    (-((data.m*data.n)/2) * log(2*pi*pars.σ) -(1/2) * (1/pars.σ) * tr((data.Z .- pars.M .- pars.U * Dtest * pars.V')'*(data.Z .- pars.M .- pars.U * Dtest * pars.V')))
+    (-((data.m*data.n)/2) * log(2*pi*pars.σ) -(1/2) * (1/pars.σ) * tr((data.Z .- pars.M .- data.Ps * pars.U * Dtest * pars.V' * data.Pt)'*(data.Z .- pars.M .- data.Ps * pars.U * Dtest * pars.V' * data.Pt)))
     return ll
 
 end
@@ -263,7 +265,7 @@ function update_σ(data::MixedEffectData, pars::MixedEffectPars)
 
 
     σ = pars.σ
-    y = reshape(pars.U * diagm(pars.D) * pars.V',:)
+    y = reshape(data.Ps * pars.U * diagm(pars.D) * pars.V' * data.Pt,:)
     z = reshape(data.Z, :)
     ν = 2
     A = 1e6

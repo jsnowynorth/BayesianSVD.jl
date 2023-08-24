@@ -131,7 +131,7 @@ end
 
 
 """
-    CreateDesignMatrix(n::Int, m::Int, Xt, Xs, Xst; intercept = true)
+    CreateDesignMatrix(n::Int, m::Int, Xs, Xt, Xst; intercept = true)
 
 Creates a design matrix.
 
@@ -140,15 +140,15 @@ See also [`Data`](@ref), [`Posterior`](@ref), and [`SampleSVD`](@ref).
 # Arguments
 - n::Int: Number of spatial locations
 - m::Int: Number of temporal locations
-- Xt: Time only covariates of dimension m x pₘ
 - Xs: Spatial only covariates of dimension n x pₙ
+- Xt: Time only covariates of dimension m x pₘ
 - Xst: Space-time only covariates of dimension mn x pₘₙ
 - intercept = true: should a global intercept be included
 
 # Returns
 - X: Design matrix of dimension mn x (pₘ + pₙ + pₘₙ) or mn x (1 + pₘ + pₙ + pₘₙ)
-
-
+- Ps: Projection onto the null space spanned by the spatial covariates of dimension pₙ x pₙ
+- Pt: Projection onto the null space spanned by the temporal covariates of dimension pₘ x pₘ
 
 # Examples
 ```
@@ -165,17 +165,35 @@ Xt = hcat(Vector(t))
 Xst = rand(Normal(), n*m, 2)
 
 #### Create design matrix
-CreateDesignMatrix(n, m, Xt, Xs, Xst, intercept = true)
+CreateDesignMatrix(n, m, Xs, Xt, Xst, intercept = true)
 ``` 
 """
-function CreateDesignMatrix(n::Int, m::Int, Xt, Xs, Xst; intercept = true)
+function CreateDesignMatrix(n::Int, m::Int, Xs, Xt, Xst; intercept = true)
     
-    if intercept
-        X = hcat(ones(n*m), repeat(Xs, outer = (m,1)), repeat(Xt, inner = (n,1)), Xst)
-    else
-        X = hcat(repeat(Xs, outer = (m,1)), repeat(Xt, inner = (n,1)), Xst)
-        # X = hcat(repeat(Xs, inner = (m,1)), repeat(Xt, outer = (n,1)), Xst)
-    end
+  if (typeof(Xs) == typeof(Xt) == typeof(Xst) <: Nothing) & !intercept
+      throw(error("You have no covariates!! You don't need this!!"))
+  end
 
-    return X
+  Ps = diagm(ones(n))
+  Pt = diagm(ones(m))
+
+  X = ones(n*m)
+  if typeof(Xs) <: Array
+      X = hcat(X, repeat(Xs, outer = (m,1)))
+      Ps = diagm(ones(n)) - Xs * inv(Xs' * Xs) * Xs'
+  end
+  if typeof(Xt) <: Array
+      X = hcat(X, repeat(Xt, inner = (n,1)))
+      Pt = diagm(ones(m)) - Xt * inv(Xt' * Xt) * Xt'
+  end
+  if typeof(Xst) <: Array
+      X = hcat(X, Xst)
+  end
+
+  if intercept
+      return X, Ps, Pt
+  else
+      return X[:,2:end], Ps, Pt
+  end
+
 end

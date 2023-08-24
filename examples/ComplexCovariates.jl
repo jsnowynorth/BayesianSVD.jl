@@ -49,9 +49,9 @@ Plots.contourf(x, t, Z', clim = extrema(Z))
 
 # βs = vcat(0.2, -0.3)
 # Xs = hcat(sin.((2*pi .* x) ./ 10), cos.((2*pi .* x) ./ 10))
-βs = vcat(1.5, -1, 2)
+βs = vcat(-1, 2)
 # Xs = hcat(sin.((2*pi .* x) ./ 10))
-Xs = hcat(ones(n), exp.(-(x .- 1).^2), sin.((2*pi .* x) ./ 5))
+Xs = hcat(exp.(-(x .- 1).^2), sin.((2*pi .* x) ./ 5))
 Ws = Xs * βs
 
 Plots.plot(x, Ws)
@@ -84,48 +84,16 @@ Plots.contourf(t, x, Wst)
 # Z = Z + reshape(repeat(Ws, m), n, m) + copy(reshape(repeat(Wt, n), m, n)') + Wst
 # Z = Z + Wst
 
-Z = Z + reshape(repeat(Ws, m), n, m)
-# Z = Z + reshape(repeat(Wt, n), m, n)
+# Z = Z + reshape(repeat(Ws, m), n, m)
+Z = Z + reshape(repeat(Wt, n), m, n)'
 # Z = Z + Wst
+# Z = Z + reshape(repeat(Ws, m), n, m) + copy(reshape(repeat(Wt, n), m, n)')
 # Z = Z + reshape(repeat(Ws, m), n, m) + copy(reshape(repeat(Wt, n), m, n)') + Wst
 Plots.contourf(x, t, Z')
 
 # Plots.contourf(x, t, (reshape(repeat(Ws, m), n, m) + copy(reshape(repeat(Wt, n), m, n)') + Wst)')
 
 #endregion
-
-
-# Xst = hcat(repeat(1:n, outer = (m,1)), repeat(1:m, inner = (n,1)))
-# Xst = Xst .* 0.5
-
-X = repeat(Xs, outer = (m,1))
-# X = repeat(Xt, inner = (n,1))
-# X = hcat(Xst)
-# X = hcat(repeat(Xs, outer = (m,1)), repeat(Xt, inner = (n,1)), Xst)
-
-Ps = diagm(ones(n)) - Xs * inv(Xs' * Xs) * Xs'
-
-inv(X' * X) * X' * reshape(Z, :)
-
-# plot(Ws)
-# plot!(mean(Z, dims = 2))
-
-# contourf(Z .- Ws)
-# contourf(Z .- mean(Z, dims = 2))
-
-# svdZ = svd(Z .- mean(Z, dims = 2))
-# Yhat = Ps * svdZ.U[:,1:k] * diagm(svdZ.S[1:k]) * svdZ.V[:,1:k]'
-
-# inv(X' * X) * X' * reshape(Z .- Yhat, :)
-# vcat(1, βs, βt, βst)
-
-
-# contourf(Ps * Y)
-# contourf(Y)
-
-# cor(hcat(X, reshape(Y, :)))
-
-# Ps * Xs * inv(Xs' * Xs) * Xs'
 
 
 ######################################################################
@@ -214,17 +182,21 @@ g = Plots.plot!(t, (svd(Z).V[:,1:k]' .* [1, -1, 1, -1, -1])', c = [:blue :red :b
 ######################################################################
 #region
 
-# X = repeat(Xs, outer = (m,1))
 
-# X = hcat(repeat(Xs, outer = (m,1)), repeat(Xt, inner = (n,1)), Xst)
-X = CreateDesignMatrix(n, m, Xt, Xs, Xst, intercept = false)
-β = vcat(βs, βt, βst)
+# X, Ps, Pt = CreateDesignMatrix(n, m, Xs, Xt, Xst, intercept = false)
+# X, Ps, Pt = CreateDesignMatrix(n, m, Xs, Xt, nothing, intercept = false)
+# X, Ps, Pt = CreateDesignMatrix(n, m, Xs, nothing, nothing, intercept = false)
+X, Ps, Pt = CreateDesignMatrix(n, m, nothing, Xt, nothing, intercept = false)
+# β = vcat(βs)
+β = vcat(βt)
+# β = vcat(βs, βt)
+# β = vcat(βs, βt, βst)
 
 
 k = 5
 ΩU = MaternCorrelation(x, ρ = 3, ν = 3.5, metric = Euclidean())
 ΩV = MaternCorrelation(t, ρ = 3, ν = 3.5, metric = Euclidean())
-data = Data(Z, X, x, t, k)
+data = Data(Z, X, Ps, Pt, x, t, k)
 pars = Pars(data, ΩU, ΩV)
 
 pars.β = β
@@ -233,11 +205,11 @@ pars.V = V
 pars.D = D
 
 
-posterior, pars = SampleSVD(data, pars; nits = 1000, burnin = 500)
+posterior, pars = SampleSVD(data, pars; nits = 5000, burnin = 2500)
 
-posterior.β_hat
-posterior.β_lower
-posterior.β_upper
+posterior.β_hat'
+posterior.β_lower'
+posterior.β_upper'
 
 posterior.D_hat
 posterior.D_lower
@@ -246,9 +218,55 @@ posterior.σ_hat
 posterior.σU_hat
 posterior.σV_hat
 
+diagm(ones(n)) - Ps
+
+Pss = inv(Xs' * Xs) * Xs'
+Ptt = inv(Xt' * Xt) * Xt'
+P = inv(X' * X) * X'
+
+
+delta = reduce(hcat, [posterior.β[:,i] .- P * reshape(posterior.U[:,:,i] * diagm(posterior.D[:,i]) * posterior.V[:,:,i]', :) for i in axes(posterior.β,2)])
+
+
+Pss * posterior.U[:,:,i] * diagm(posterior.D[:,i]) * posterior.U[:,:,i]' * Pss'
+
+delta1 = [rand(MvNormal(posterior.β[1:2,i], Hermitian(Pss * posterior.U[:,:,i] * diagm(posterior.D[:,i]) * posterior.U[:,:,i]' * Pss'))) for i in axes(posterior.U, 3)]
+delta2 = [rand(Normal(posterior.β[3,i], (Ptt * posterior.V[:,:,i] * diagm(posterior.D[:,i]) * posterior.V[:,:,i]' * Ptt')[1,1])) for i in axes(posterior.U, 3)]
+
+mean(delta1)
+mean(delta2)
+
+β'
+
+
+X' * P'
+X' * reshape(Ps * posterior.U[:,:,i] * diagm(posterior.D[:,i]) * posterior.V[:,:,i]' * Pt', :)
+
+delta = reduce(hcat, [posterior.β[:,i] .- P * reshape(posterior.U[:,:,i] * diagm(posterior.D[:,i]) * posterior.V[:,:,i]', :) for i in axes(posterior.β,2)])
+
+delta1 = [rand(MvNormal(delta[1:2,i], Hermitian(Pss * posterior.U[:,:,i] * diagm(posterior.D[:,i]) * posterior.U[:,:,i]' * Pss'))) for i in axes(posterior.U, 3)]
+delta2 = [rand(Normal(delta[3,i], (Ptt * posterior.V[:,:,i] * diagm(posterior.D[:,i]) * posterior.V[:,:,i]' * Ptt')[1,1])) for i in axes(posterior.U, 3)]
+
+mean(delta1)
+mean(delta2)
+
+β'
+
+delta = vcat(reduce(hcat, delta1), delta2')
+
+
+
+mean(delta, dims = 2)
+
+[quantile(delta[i,:], 0.025) for i in axes(delta, 1)]'
+[quantile(delta[i,:], 0.975) for i in axes(delta, 1)]'
+β'
+
+Plots.plot(delta', label = false, c = [:blue :red :magenta :orange :green])
+Plots.hline!(β, label = false, c = [:blue :red :magenta :orange :green])
 
 Plots.plot(posterior.β', label = false)
-Plots.hline!(βs, label = false)
+Plots.hline!(β, label = false)
 
 Plots.plot(posterior.D', label = false, size = (900, 600))
 Plots.hline!([D], label = false)

@@ -9,6 +9,8 @@ abstract type Data end
 struct MixedEffectData <: Data
     Z::Array{Float64}
     X::Array{Float64}
+    Ps::Array{Float64}
+    Pt::Array{Float64}
     ulocs::Array{Float64}
     vlocs::Array{Float64}
     n::Int
@@ -51,11 +53,11 @@ data = Data(Z, x, t, k)
 pars = Pars(data, ΩU, ΩV)
 ``` 
 """
-function Data(Z::Array{Float64, 2}, X::Array{Float64, 2}, ulocs, vlocs, k::Int)
+function Data(Z::Array{Float64, 2}, X::Array{Float64, 2}, Ps::Array{Float64, 2}, Pt::Array{Float64, 2}, ulocs, vlocs, k::Int)
     n, m = size(Z)
     p = size(X, 2)
 
-    MixedEffectData(Z, X, ulocs, vlocs, n, m, p, k)
+    MixedEffectData(Z, X, Ps, Pt, ulocs, vlocs, n, m, p, k)
 end
 
 
