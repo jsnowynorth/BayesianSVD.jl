@@ -13,4 +13,4 @@ julia> ] dev .
 This will make the package callable via the `using BayesianSVD` command.
 
 
-<img src="./examples/logo.png" alt="drawing" width="500"/>
+<img src="./examples/logo.png" alt="drawing" width="1000"/>
