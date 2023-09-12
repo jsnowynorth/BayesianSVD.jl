@@ -2,8 +2,7 @@
 
 using BayesianSVD
 using Distances, Plots, Random, Distributions, LinearAlgebra, Statistics
-
-
+using Kronecker
 
 # using CairoMakie
 # using DataFrames, DataFramesMeta, Chain, CSV
@@ -80,99 +79,21 @@ Plots.contourf(t, x, Wst)
 
 #### Full data set
 
+X = kronecker(Xt, Xs)
+β = vcat(-1, 2)
+Z = Z + reshape(X * β, n, m)
 
 # Z = Z + reshape(repeat(Ws, m), n, m) + copy(reshape(repeat(Wt, n), m, n)') + Wst
 # Z = Z + Wst
 
-# Z = Z + reshape(repeat(Ws, m), n, m)
-Z = Z + reshape(repeat(Wt, n), m, n)'
+Z = Z + reshape(repeat(Ws, m), n, m)
+# Z = Z + reshape(repeat(Wt, n), m, n)'
 # Z = Z + Wst
 # Z = Z + reshape(repeat(Ws, m), n, m) + copy(reshape(repeat(Wt, n), m, n)')
 # Z = Z + reshape(repeat(Ws, m), n, m) + copy(reshape(repeat(Wt, n), m, n)') + Wst
-Plots.contourf(x, t, Z')
+Plots.contourf(x, t, Z' - Y')
 
 # Plots.contourf(x, t, (reshape(repeat(Ws, m), n, m) + copy(reshape(repeat(Wt, n), m, n)') + Wst)')
-
-#endregion
-
-
-######################################################################
-#### Visualize Data
-######################################################################
-#region
-
-colorlist = [:blue, :red, :magenta, :orange, :green]
-LW = 4
-nsteps = 20
-nticks = 7
-
-##################
-#### basis function plot
-##################
-# set up plot
-# g = CairoMakie.Figure(backgroundcolor = RGBf(0.98, 0.98, 0.98), resolution = (1000, 700), linewidth = 5)
-g = CairoMakie.Figure(;resolution = (1000, 700), linewidth = 5)
-ax11 = Axis(g[1,1], yticks = [-0.3, -0.15, 0, 0.15, 0.3], limits = ((0, 10),(-0.3, 0.3)))
-ax21 = Axis(g[2,1], ylabel = "Space", xlabel = "Time", limits = ((0,10), (0, 10)), xlabelsize = 20, ylabelsize = 20, xlabelfont = :bold, ylabelfont = :bold)
-ax22 = Axis(g[2,2], xticks = [-0.24, -0.12, 0, 0.12, 0.24], xticklabelrotation = -pi/5, limits = ((-0.25, 0.25), (-5, 5)))
-linkyaxes!(ax21, ax22)
-linkxaxes!(ax21, ax11)
-
-
-
-# plot time basis functions
-CairoMakie.series!(ax11, t, V', labels = ["Basis Function $i" for i in axes(V,2)], color = colorlist, linewidth = LW)
-CairoMakie.xlims!(ax11, low = 0, high = 10)
-g
-
-
-# plot spatial basis functions
-for i in axes(U, 2)
-    CairoMakie.lines!(ax22, U[:,i], x, label = "Basis Function $i", color = colorlist[i], linewidth = LW)
-end
-CairoMakie.ylims!(ax22, low = -5, high = 5)
-g
-
-# make legend
-leg = CairoMakie.Legend(g[1,2], ax11, 
-    patchsize = (40.0f0, 40.0f0),
-    markersize = 10, labelsize = 15,
-    height = 200, width = 200)
-leg.tellheight = true
-g
-
-
-# contour plot
-crange = (-1.05, 1.05).*maximum(abs, Z)
-hm = CairoMakie.contourf!(ax21, t, x, Z', 
-    colormap = :balance, colorrange = crange,
-    levels = range(crange[1], crange[2], step = (crange[2]-crange[1])/nsteps))
-
-#
-CairoMakie.Colorbar(g[1:2,3], hm, ticks = round.(range(crange[1], crange[2], length = nticks), digits = 3))
-
-CairoMakie.hidexdecorations!(ax11, grid = false)
-CairoMakie.hideydecorations!(ax22, grid = false)
-g
-
-colsize!(g.layout, 1, Fixed(600))
-colsize!(g.layout, 2, Fixed(200))
-rowsize!(g.layout, 1, Fixed(200))
-rowsize!(g.layout, 2, Fixed(400))
-g
-
-
-# save("./results/oneSpatialDimension/generatedData1D.svg", g)
-# save("./results/oneSpatialDimension/generatedData1D.png", g)
-
-
-g = Plots.plot(x, U, c = [:blue :red :magenta :orange :green], linewidth = 2, legend = false, size = (700, 400))
-g = Plots.plot!(x, (svd(Z).U[:,1:k]' .* [1, -1, 1, -1, -1])', c = [:blue :red :black :orange :green], linewidth = 2, linestyle = :dash, legend = false)
-# save("/Users/JSNorth/Desktop/Uplot.svg", g)
-
-g = Plots.plot(t, V, c = [:blue :red :magenta :orange :green], linewidth = 2, legend = false, size = (700, 400))
-g = Plots.plot!(t, (svd(Z).V[:,1:k]' .* [1, -1, 1, -1, -1])', c = [:blue :red :black :orange :green], linewidth = 2, linestyle = :dash, legend = false)
-# save("/Users/JSNorth/Desktop/Vplot.svg", g)
 
 #endregion
 
@@ -183,15 +104,19 @@ g = Plots.plot!(t, (svd(Z).V[:,1:k]' .* [1, -1, 1, -1, -1])', c = [:blue :red :b
 #region
 
 
-# X, Ps, Pt = CreateDesignMatrix(n, m, Xs, Xt, Xst, intercept = false)
-# X, Ps, Pt = CreateDesignMatrix(n, m, Xs, Xt, nothing, intercept = false)
-# X, Ps, Pt = CreateDesignMatrix(n, m, Xs, nothing, nothing, intercept = false)
-X, Ps, Pt = CreateDesignMatrix(n, m, nothing, Xt, nothing, intercept = false)
-# β = vcat(βs)
-β = vcat(βt)
+# X, Ps, Pt = CreateDesignMatrix(n, m, Xs, Xt, Xst, intercept = false) # all data
+X, Ps, Pt = CreateDesignMatrix(n, m, Xs, Xt, nothing, intercept = false) # no space-time
+# X, Ps, Pt = CreateDesignMatrix(n, m, Xs, nothing, nothing, intercept = false) # no time or space-time
+# X, Ps, Pt = CreateDesignMatrix(n, m, nothing, Xt, nothing, intercept = false) # no space or space-time
+β = vcat(βs)
+# β = vcat(βt)
 # β = vcat(βs, βt)
 # β = vcat(βs, βt, βst)
 
+X = kronecker(Xt, Xs)
+X = convert(Matrix, X)
+Ps = diagm(ones(n))
+Pt = diagm(ones(m))
 
 k = 5
 ΩU = MaternCorrelation(x, ρ = 3, ν = 3.5, metric = Euclidean())
@@ -199,10 +124,10 @@ k = 5
 data = Data(Z, X, Ps, Pt, x, t, k)
 pars = Pars(data, ΩU, ΩV)
 
-pars.β = β
-pars.U = U
-pars.V = V
-pars.D = D
+# pars.β = β
+# pars.U = U
+# pars.V = V
+# pars.D = D
 
 
 posterior, pars = SampleSVD(data, pars; nits = 5000, burnin = 2500)
@@ -218,7 +143,34 @@ posterior.σ_hat
 posterior.σU_hat
 posterior.σV_hat
 
-diagm(ones(n)) - Ps
+
+
+P = inv(X' * X) * X'
+Pss = inv(Xs' * Xs) * Xs'
+Ptt = inv(Xt' * Xt) * Xt'
+
+EY = [P * reshape(posterior.U[:,:,i] * diagm(posterior.D[:,i]) * posterior.V[:,:,i]',:) for i in axes(posterior.β, 2)]
+Eβ = [posterior.β[:,i] - P * reshape(posterior.U[:,:,i] * diagm(posterior.D[:,i]) * posterior.V[:,:,i]',:) for i in axes(posterior.β, 2)]
+Vβ = [P * var(reshape(posterior.U[:,:,i] * diagm(posterior.D[:,i]) * posterior.V[:,:,i]',:)) * P' for i in axes(posterior.β, 2)]
+
+δ = reduce(hcat, [rand(MvNormal(Eβ[i], Hermitian(Vβ[i]))) for i in axes(posterior.β, 2)])
+
+Plots.plot(δ', label = false, c = [:blue :red :magenta :orange :green])
+Plots.hline!(β, label = false, c = [:blue :red :magenta :orange :green])
+
+Plots.plot(posterior.β', label = false, c = [:blue :red :magenta :orange :green])
+Plots.hline!(β, label = false, c = [:blue :red :magenta :orange :green])
+
+
+mean(δ, dims = 2)
+
+[quantile(δ[i,:], 0.025) for i in axes(δ, 1)]'
+[quantile(δ[i,:], 0.975) for i in axes(δ, 1)]'
+
+
+Plots.plot(reduce(hcat, EY)')
+
+
 
 Pss = inv(Xs' * Xs) * Xs'
 Ptt = inv(Xt' * Xt) * Xt'
@@ -227,32 +179,24 @@ P = inv(X' * X) * X'
 
 delta = reduce(hcat, [posterior.β[:,i] .- P * reshape(posterior.U[:,:,i] * diagm(posterior.D[:,i]) * posterior.V[:,:,i]', :) for i in axes(posterior.β,2)])
 
+# delta1 = [rand(MvNormal(posterior.β[1:2,i], Hermitian(Pss * posterior.U[:,:,i] * diagm(posterior.D[:,i]) * posterior.U[:,:,i]'  * Pss'))) for i in axes(posterior.U, 3)]
+# delta2 = [rand(Normal(posterior.β[3,i], (Ptt * posterior.V[:,:,i] * diagm(posterior.D[:,i]) * posterior.V[:,:,i]' * Ptt'))) for i in axes(posterior.U, 3)]
 
-Pss * posterior.U[:,:,i] * diagm(posterior.D[:,i]) * posterior.U[:,:,i]' * Pss'
-
-delta1 = [rand(MvNormal(posterior.β[1:2,i], Hermitian(Pss * posterior.U[:,:,i] * diagm(posterior.D[:,i]) * posterior.U[:,:,i]' * Pss'))) for i in axes(posterior.U, 3)]
-delta2 = [rand(Normal(posterior.β[3,i], (Ptt * posterior.V[:,:,i] * diagm(posterior.D[:,i]) * posterior.V[:,:,i]' * Ptt')[1,1])) for i in axes(posterior.U, 3)]
-
-mean(delta1)
-mean(delta2)
+# mean(delta1)
+# mean(delta2)
 
 β'
 
 
-X' * P'
-X' * reshape(Ps * posterior.U[:,:,i] * diagm(posterior.D[:,i]) * posterior.V[:,:,i]' * Pt', :)
+
 
 delta = reduce(hcat, [posterior.β[:,i] .- P * reshape(posterior.U[:,:,i] * diagm(posterior.D[:,i]) * posterior.V[:,:,i]', :) for i in axes(posterior.β,2)])
 
-delta1 = [rand(MvNormal(delta[1:2,i], Hermitian(Pss * posterior.U[:,:,i] * diagm(posterior.D[:,i]) * posterior.U[:,:,i]' * Pss'))) for i in axes(posterior.U, 3)]
-delta2 = [rand(Normal(delta[3,i], (Ptt * posterior.V[:,:,i] * diagm(posterior.D[:,i]) * posterior.V[:,:,i]' * Ptt')[1,1])) for i in axes(posterior.U, 3)]
 
-mean(delta1)
-mean(delta2)
+SigmaEst = [P * ((reshape(posterior.U[:,:,i] * diagm(posterior.D[:,i]) * posterior.V[:,:,i]', :)) * reshape(posterior.U[:,:,i] * diagm(posterior.D[:,i]) * posterior.V[:,:,i]', :)' .+ diagm(posterior.σ[i] * ones(n*m))) * P' for i in axes(posterior.U, 3)]
+delta = reduce(hcat, [rand(MvNormal(posterior.β[:,i], Hermitian(SigmaEst[i]))) for i in axes(posterior.U, 3)])
 
-β'
-
-delta = vcat(reduce(hcat, delta1), delta2')
+# delta = reduce(hcat, [rand(MvNormal(posterior.β[:,i] .- P * reshape(posterior.U[:,:,i] * diagm(posterior.D[:,i]) * posterior.V[:,:,i]', :), Hermitian(SigmaEst[i]))) for i in axes(posterior.U, 3)])
 
 
 
@@ -294,7 +238,11 @@ g = Plots.plot!(t, svd(Z).V[:,1:data.k], c = [:blue :red :magenta :orange :green
 # save("/Users/JSNorth/Desktop/VplotEst.svg", g)
 # save("/Users/JSNorth/Desktop/VplotEst.png", g)
 
+Up = [Ps * posterior.U[:,:,i] for i in axes(posterior.U, 3)]
+Up = reshape(reduce(hcat, Up), 50, 5, 2500)
 
+Plots.plot(Up[50,1,:], title = "U")
+Plots.plot!(posterior.U[50,1,:], title = "U")
 
 Plots.plot(posterior.σU', title = "σU", size = (1000, 600))
 Plots.plot(posterior.σV', title = "σV", size = (1000, 600))

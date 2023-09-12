@@ -5,7 +5,10 @@
 #### Update β
 function update_β(data::MixedEffectData, pars::MixedEffectPars)
 
-    Ztilde = reshape(data.Z - data.Ps * pars.U * diagm(pars.D) * pars.V' * data.Pt, :)
+    
+    # Ztilde = reshape(data.Z - data.Ps * pars.U * diagm(pars.D) * pars.V' * data.Pt, :)
+    P = kronecker(data.Pt, data.Ps)
+    Ztilde = reshape(data.Z, :) - P * reshape(pars.U * diagm(pars.D) * pars.V', :)
     m = (1/pars.σ) * data.X' * Ztilde
     S = (1/pars.σ) * data.X' * data.X + diagm(1/100*ones(data.p))
 
@@ -265,7 +268,9 @@ function update_σ(data::MixedEffectData, pars::MixedEffectPars)
 
 
     σ = pars.σ
-    y = reshape(data.Ps * pars.U * diagm(pars.D) * pars.V' * data.Pt,:)
+    # y = reshape(data.Ps * pars.U * diagm(pars.D) * pars.V' * data.Pt,:)
+    P = kronecker(data.Pt, data.Ps)
+    y = P * reshape(pars.U * diagm(pars.D) * pars.V', :)
     z = reshape(data.Z, :)
     ν = 2
     A = 1e6

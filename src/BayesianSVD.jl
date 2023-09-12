@@ -22,6 +22,7 @@ using Random # random sampling support
 using SpecialFunctions # for Bessel function
 using ProgressMeter # show progress of sampler
 using Distances # compute distances
+using Kronecker
 using RecipesBase # special plots
 
 ######################################################################
