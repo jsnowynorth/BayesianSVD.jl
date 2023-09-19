@@ -51,7 +51,8 @@ Plots.contourf(x, t, Z', clim = extrema(Z))
 # Xs = hcat(sin.((2*pi .* x) ./ 10), cos.((2*pi .* x) ./ 10))
 βs = vcat(1.5, -1, 2)
 # Xs = hcat(sin.((2*pi .* x) ./ 10))
-Xs = hcat(ones(n), exp.(-(x .- 1).^2), sin.((2*pi .* x) ./ 5))
+# Xs = hcat(exp.(-(x .- 1).^2), sin.((2*pi .* x) ./ 5))
+Xs = hcat(0.5 .- exp.(-(x .- 1).^2), sin.((2*pi .* x) ./ 5))
 Ws = Xs * βs
 
 Plots.plot(x, Ws)
@@ -79,12 +80,17 @@ Plots.contourf(t, x, Wst)
 
 
 #### Full data set
+using Kronecker
 
+X = convert(Matrix, kronecker(Xt, Xs))
+β = [-1, 2]
+
+Z = Z + reshape(X * β, n, m)
 
 # Z = Z + reshape(repeat(Ws, m), n, m) + copy(reshape(repeat(Wt, n), m, n)') + Wst
 # Z = Z + Wst
 
-Z = Z + reshape(repeat(Ws, m), n, m)
+# Z = Z + reshape(repeat(Ws, m), n, m)
 # Z = Z + reshape(repeat(Wt, n), m, n)
 # Z = Z + Wst
 # Z = Z + reshape(repeat(Ws, m), n, m) + copy(reshape(repeat(Wt, n), m, n)') + Wst
@@ -248,7 +254,7 @@ posterior.σV_hat
 
 
 Plots.plot(posterior.β', label = false)
-Plots.hline!(βs, label = false)
+Plots.hline!(β, label = false)
 
 Plots.plot(posterior.D', label = false, size = (900, 600))
 Plots.hline!([D], label = false)
