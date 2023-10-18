@@ -60,11 +60,13 @@ function update_U(data::RandomEffectData, pars::RandomEffectPars)
 
     for i in 1:data.k
         inds = i .∉ Vector(1:data.k)
-        N = nullspace(U[:,inds]')
+        # N = nullspace(U[:,inds]')
+        N = NS(U[:,inds])
         E = data.Z - U[:,inds] * diagm(pars.D[inds]) * pars.V[:,inds]'
 
         NON = Hermitian(N' * pars.ΩU[i].K * N)
         NONinv = inv(NON)
+        # NONinv = (NON \ diagm(ones(data.n-data.k+1)))
         
         m = pars.D[i] * (1/pars.σ) * N' * E * pars.V[:,i]
         S = pars.D[i]^2 * (1/pars.σU[i]) .* NONinv + pars.D[i]^2 * (1/pars.σ) * diagm(ones(data.n - data.k + 1))
@@ -124,11 +126,13 @@ function update_V(data::RandomEffectData, pars::RandomEffectPars)
 
     for i in 1:data.k
         inds = i .∉ Vector(1:data.k)
-        N = nullspace(V[:,inds]')
+        # N = nullspace(V[:,inds]')
+        N = NS(V[:,inds])
         E = data.Z - pars.U[:,inds] * diagm(pars.D[inds]) * V[:,inds]'
 
         NON = Hermitian(N' * pars.ΩV[i].K * N)
         NONinv = inv(NON)
+        # NONinv = (NON \ diagm(ones(data.m-data.k+1)))
         
         m = pars.D[i] * (1/pars.σ) * N' * E' * pars.U[:,i]
         S = pars.D[i]^2 * (1/pars.σV[i]) .* NONinv + pars.D[i]^2 * (1/pars.σ) * diagm(ones(data.m - data.k + 1))

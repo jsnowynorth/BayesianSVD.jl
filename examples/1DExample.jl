@@ -223,6 +223,15 @@ g = Plots.plot!(t, (svd(Z).V[:,1:k]' .* [1, -1, 1, -1, -1])', c = [:blue :red :m
 k = 5
 ΩU = MaternCorrelation(x, ρ = 3, ν = 3.5, metric = Euclidean())
 ΩV = MaternCorrelation(t, ρ = 3, ν = 3.5, metric = Euclidean())
+
+# Ω = (ΩU.K .+ 0.0001*diagm(ones(n))) .- 0.0001
+# Ω[Ω .< 0] .= 0
+# ΩU.K = copy(Ω)
+
+# Ω = (ΩV.K .+ 0.0001*diagm(ones(n))) .- 0.0001
+# Ω[Ω .< 0] .= 0
+# ΩV.K = copy(Ω)
+
 data = Data(Z, x, t, k)
 pars = Pars(data, ΩU, ΩV)
 

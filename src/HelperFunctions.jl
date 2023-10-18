@@ -197,3 +197,16 @@ function CreateDesignMatrix(n::Int, m::Int, Xs, Xt, Xst; intercept = true)
   end
 
 end
+
+
+
+"""
+    NS(A)
+
+Compute the nullspace of the matrix A.
+
+"""
+function NS(A)
+  k = size(A, 2)
+  svd(A; full = true).U[:,(k+1):(end)]
+end

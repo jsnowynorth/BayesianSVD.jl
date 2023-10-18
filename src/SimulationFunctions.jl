@@ -175,3 +175,106 @@ function GenerateData(ΣU::Vector{T}, ΣV::Vector{T}, D, k, ϵ; SNR = false) whe
   return U, V, Y, Z
   
 end
+
+
+
+"""
+  GenerateCorrelatedData(ΣU::Correlation, ΣV::Correlation, D, k, X, β, Ps, Pt, ϵ; SNR = false)
+  GenerateCorrelatedData(ΣU::Vector{T}, ΣV::Vector{T}, D, k, X, β, Ps, Pt, ϵ; SNR = false) where T <: Correlation
+
+Generate random basis functions and data given a correlation structure for ``U`` and ``V``.
+
+# Arguments
+- ΣU::Correlation
+- ΣU::Correlation
+- D: vector of length k
+- k: number of basis functions
+- ϵ: standard devaiation of the noise, if SNR = true then ϵ is the signal to noise ratio
+
+# Optional Arguments
+- SNR = false: Boolean for if ϵ is standard deviation (false) or signal to noise ratio value (true)
+
+# Returns
+- U: U basis functions
+- V: V basis functions
+- Y: True smooth surface
+- Z: Noisy "observed" surface
+
+# Examples
+```
+m = 100
+n = 100
+x = range(-5, 5, n)
+t = range(0, 10, m)
+
+ΣU = MaternCorrelation(x, ρ = 3, ν = 3.5, metric = Euclidean())
+ΣV = MaternCorrelation(t, ρ = 3, ν = 3.5, metric = Euclidean())
+
+
+D = [40, 30, 20, 10, 5]
+k = 5
+
+Random.seed!(2)
+U, V, Y, Z = GenerateCorrelatedData(ΣU, ΣV, D, k, 0.1) # standard deviation
+U, V, Y, Z = GenerateCorrelatedData(ΣU, ΣV, D, k, 2, SNR = true) # signal to noise
+```
+"""
+function GenerateCorrelatedData(ΣU::Correlation, ΣV::Correlation, D, k, X, β, Ps, Pt, ϵ; SNR = false)
+
+  n = size(ΣU.K,1)
+  m = size(ΣV.K,1)
+
+  U = PON(n, k, ΣU)
+  V = PON(m, k, ΣV)
+  Y = U * diagm(D) * V'
+
+  M = reshape(X * β, n, m)
+
+  if SNR
+
+    η = rand(Normal(), n, m)
+    σ = sqrt.(var(Y) ./ (ϵ * var(η))) # set the standard deviation
+    Z = M + Ps * Y * Pt' + σ .* η
+
+  else
+
+    η = rand(Normal(0, sqrt(ϵ)), n, m)
+    Z = M + Ps * Y * Pt' + η
+
+  end
+
+  return U, V, Y, Z
+  
+end
+
+function GenerateCorrelatedData(ΣU::Vector{T}, ΣV::Vector{T}, D, k, ϵ; SNR = false) where T <: Correlation
+
+  n = size(ΣU[1].K,1)
+  m = size(ΣV[1].K,1)
+
+  U = PON(n, k, ΣU)
+  V = PON(m, k, ΣV)
+  Y = U * diagm(D) * V'
+
+  if SNR
+
+    η = rand(Normal(), n, m)
+    # A = ones(n*m)
+    # η = reshape(reshape(η, :) - A * inv(A' * A) * (A'*reshape(η, :)), n, m)
+  
+    σ = sqrt.(var(Y) ./ (ϵ * var(η))) # set the standard deviation
+    Z = Y + σ .* η
+
+  else
+
+    η = rand(Normal(0, sqrt(ϵ)), n, m)
+    # A = ones(n*m)
+    # η = reshape(reshape(η, :) - ϵ * A * inv(A' * ϵ * A) * (A'*reshape(η, :)), n, m)
+  
+    Z = Y + η
+
+  end
+
+  return U, V, Y, Z
+  
+end

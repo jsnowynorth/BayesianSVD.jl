@@ -40,6 +40,7 @@ export
     # overall sample function
     PON,
     GenerateData,
+    GenerateCorrelatedData,
 
     # helper functions
     posteriorCoverage,

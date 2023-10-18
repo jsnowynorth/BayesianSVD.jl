@@ -38,6 +38,8 @@ Plots.contourf(x, t, Y', clim = extrema(Z))
 Plots.contourf(x, t, Z', clim = extrema(Z))
 
 
+
+
 ########################################################################
 #### Space-Time covariates
 ########################################################################
@@ -97,6 +99,9 @@ Plots.contourf(x, t, Z' - Y')
 
 #endregion
 
+Random.seed!(2)
+U, V, Y, Z = GenerateCorrelatedData(ΣU, ΣV, D, k, X, β, Ps, Pt, 2; SNR = true)
+
 
 ######################################################################
 #### Sample
@@ -115,8 +120,8 @@ X, Ps, Pt = CreateDesignMatrix(n, m, Xs, Xt, nothing, intercept = false) # no sp
 
 X = kronecker(Xt, Xs)
 X = convert(Matrix, X)
-Ps = diagm(ones(n))
-Pt = diagm(ones(m))
+# Ps = diagm(ones(n))
+# Pt = diagm(ones(m))
 
 k = 5
 ΩU = MaternCorrelation(x, ρ = 3, ν = 3.5, metric = Euclidean())
@@ -130,7 +135,7 @@ pars = Pars(data, ΩU, ΩV)
 # pars.D = D
 
 
-posterior, pars = SampleSVD(data, pars; nits = 5000, burnin = 2500)
+posterior, pars = SampleSVD(data, pars; nits = 10000, burnin = 5000)
 
 posterior.β_hat'
 posterior.β_lower'
@@ -168,6 +173,7 @@ mean(δ, dims = 2)
 [quantile(δ[i,:], 0.975) for i in axes(δ, 1)]'
 
 
+Plots.plot(reduce(hcat, EY)')
 Plots.plot(reduce(hcat, EY)')
 
 
@@ -239,10 +245,18 @@ g = Plots.plot!(t, svd(Z).V[:,1:data.k], c = [:blue :red :magenta :orange :green
 # save("/Users/JSNorth/Desktop/VplotEst.png", g)
 
 Up = [Ps * posterior.U[:,:,i] for i in axes(posterior.U, 3)]
-Up = reshape(reduce(hcat, Up), 50, 5, 2500)
+Up = reshape(reduce(hcat, Up), 50, 5, :)
 
-Plots.plot(Up[50,1,:], title = "U")
-Plots.plot!(posterior.U[50,1,:], title = "U")
+i=1
+Plots.plot(Up[25,i,:], title = "U")
+Plots.plot!(posterior.U[25,i,:], title = "U")
+
+
+i=2
+Plots.plot(U[:,i], title = "U", c = :black)
+Plots.plot!(Up[:,i,Vector(range(1,size(Up, 3), step = 100))], title = "U", label = false, c = :gray, linealpha = 0.4)
+Plots.plot!(posterior.U[:,i,Vector(range(1,size(Up, 3), step = 100))], title = "U", label = false, c = :blue, linealpha = 0.2)
+
 
 Plots.plot(posterior.σU', title = "σU", size = (1000, 600))
 Plots.plot(posterior.σV', title = "σV", size = (1000, 600))
