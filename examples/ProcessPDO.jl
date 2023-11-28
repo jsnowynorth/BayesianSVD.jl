@@ -280,7 +280,22 @@ g = with_theme(PDO_plot, bold_theme)
 
 #endregion
 
+########################################################################
+#### variogram of each basis function
+########################################################################
+#region
 
+# svdZ = svd(Z)
+# U = svdZ.U[:,1:50]
+
+# writedlm("/Users/JSNorth/Desktop/U.csv", [locs_obs U], ',')
+
+# table = (; U1 = U[:,1], U2 = U[:,2])
+# coord = [(locs_obs[i,1], locs_obs[i,2]) for i in axes(locs_obs, 1)]
+
+# georef(U, locs_obs)
+
+#endregion
 
 
 

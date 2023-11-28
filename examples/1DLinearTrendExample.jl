@@ -1,10 +1,9 @@
 
-include("../src/BasisFunctions.jl")
 
-# using CairoMakie
-using DataFrames, DataFramesMeta, Chain, CSV
-# using LaTeXStrings
 
+using BayesianSVD
+using Distances, Plots, Random, Distributions, LinearAlgebra
+using CairoMakie
 
 ######################################################################
 #### Generate Some Data
@@ -24,9 +23,9 @@ D = [40, 30, 20, 10, 5]
 k = 5
 ϵ = 0.1
 
-Random.seed!(2)
+Random.seed!(3)
 # U, V, Y, Z = GenerateData(ΣU, ΣV, D, k, ϵ)
-U, V, Y, Z = GenerateData(ΣU, ΣV, D, k, 2, SNR = true)
+U, V, Y, Z = GenerateData(ΣU, ΣV, D, k, 1, SNR = true)
 
 Plots.plot(x, U, xlabel = "Space", ylabel = "Value", label = ["U" * string(i) for i in (1:k)'])
 Plots.plot(t, V, xlabel = "Time", ylabel = "Value", label = ["V" * string(i) for i in (1:k)'])
@@ -36,13 +35,20 @@ Plots.contourf(x, t, Z', clim = extrema(Z))
 
 # var(Y)/(var(Z - Y))
 
-
+Random.seed!(3)
 β = [-2, 0.6, 1.2, -0.9]
-X = rand(Normal(), n*m, length(β))
-Z = Z + reshape(X*β, n, m)
+X = rand(Normal(0, 0.2), n*m, length(β))
+M = reshape(X*β, n, m)
+Z = Z + M
 Plots.contourf(x, t, Z')
 
-Plots.contourf(x, t, (reshape(X*β, n, m))')
+Plots.contourf(x, t, M')
+
+# η = rand(Normal(), n, m)
+# σ = sqrt.(var(M + Y) ./ (1 * var(η))) # set the standard deviation
+# Z = M + Y + σ .* η
+
+# var(M + Y)/(var(Z - M - Y))
 
 #endregion
 
@@ -56,59 +62,80 @@ LW = 4
 nsteps = 20
 nticks = 7
 
+
 ##################
 #### basis function plot
 ##################
 # set up plot
-# g = CairoMakie.Figure(backgroundcolor = RGBf(0.98, 0.98, 0.98), resolution = (1000, 700), linewidth = 5)
 g = CairoMakie.Figure(;resolution = (1000, 700), linewidth = 5)
-ax11 = Axis(g[1,1], yticks = [-0.3, -0.15, 0, 0.15, 0.3], limits = ((0, 10),(-0.3, 0.3)))
-ax21 = Axis(g[2,1], ylabel = "Space", xlabel = "Time", limits = ((0,10), (0, 10)), xlabelsize = 20, ylabelsize = 20, xlabelfont = :bold, ylabelfont = :bold)
-ax22 = Axis(g[2,2], xticks = [-0.24, -0.12, 0, 0.12, 0.24], xticklabelrotation = -pi/5, limits = ((-0.25, 0.25), (-5, 5)))
-linkyaxes!(ax21, ax22)
-linkxaxes!(ax21, ax11)
+ax11 = Axis(g[1,1], limits = ((0, 5), (0, 5)), xgridvisible = false, ygridvisible = false)
+ax12 = Axis(g[1,2], yticks = [-0.3, -0.15, 0, 0.15, 0.3], limits = ((0, 10),(-0.36, 0.36)), xlabel = "Time", xlabelsize = 20, xlabelfont = :bold, xaxisposition = :top, yaxisposition = :right)
+ax22 = Axis(g[2,2], limits = ((0,10), (0, 10)), yaxisposition = :right)
+ax21 = Axis(g[2,1], xticks = [-0.35, -0.17, 0, 0.17, 0.35], xticklabelrotation = -pi/5, limits = ((-0.22, 0.22), (-5, 5)), ylabel = "Space", ylabelsize = 20, ylabelfont = :bold)
+linkyaxes!(ax22, ax21)
+linkxaxes!(ax22, ax12)
+g
+
+
+# plot the D Matrix
+Dlabels = [L"\textbf{d}_{%$i, %$i} = %$(D[i])" for i in 1:5]
+
+for i in 1:5
+    CairoMakie.text!(ax11, 0.65*(i-1), 5-i, text = Dlabels[i], fontsize = 28, color = colorlist[i])
+end
+g
 
 
 
 # plot time basis functions
-CairoMakie.series!(ax11, t, V', labels = ["Basis Function $i" for i in axes(V,2)], color = colorlist, linewidth = LW)
-CairoMakie.xlims!(ax11, low = 0, high = 10)
+CairoMakie.series!(ax12, t, V', labels = Dlabels, color = colorlist, linewidth = LW)
+CairoMakie.xlims!(ax12, low = 0, high = 10)
 g
 
 
 # plot spatial basis functions
 for i in axes(U, 2)
-    CairoMakie.lines!(ax22, U[:,i], x, label = "Basis Function $i", color = colorlist[i], linewidth = LW)
+    CairoMakie.lines!(ax21, U[:,i], x, label = Dlabels[i], color = colorlist[i], linewidth = LW)
 end
-CairoMakie.ylims!(ax22, low = -5, high = 5)
-g
-
-# make legend
-leg = CairoMakie.Legend(g[1,2], ax11, 
-    patchsize = (40.0f0, 40.0f0),
-    markersize = 10, labelsize = 15,
-    height = 200, width = 200)
-leg.tellheight = true
+CairoMakie.ylims!(ax21, low = -5, high = 5)
 g
 
 
 # contour plot
 crange = (-1.05, 1.05).*maximum(abs, Z)
-hm = CairoMakie.contourf!(ax21, t, x, Z', 
+hm = CairoMakie.contourf!(ax22, t, x, Z', 
     colormap = :balance, colorrange = crange,
     levels = range(crange[1], crange[2], step = (crange[2]-crange[1])/nsteps))
 
 #
 CairoMakie.Colorbar(g[1:2,3], hm, ticks = round.(range(crange[1], crange[2], length = nticks), digits = 3))
+g
 
+
+CairoMakie.hideydecorations!(ax11, grid = false)
 CairoMakie.hidexdecorations!(ax11, grid = false)
+CairoMakie.hideydecorations!(ax12, grid = false)
+CairoMakie.hidexdecorations!(ax21, grid = false)
+CairoMakie.hidexdecorations!(ax22, grid = false)
 CairoMakie.hideydecorations!(ax22, grid = false)
 g
 
-colsize!(g.layout, 1, Fixed(600))
-colsize!(g.layout, 2, Fixed(200))
-rowsize!(g.layout, 1, Fixed(200))
-rowsize!(g.layout, 2, Fixed(400))
+
+# size the columns and rows
+colsize!(g.layout, 1, Fixed(200))
+rowsize!(g.layout, 1, Fixed(175))
+g
+
+# spacing the columns and rows
+colgap!(g.layout, 1, 15)
+rowgap!(g.layout, 1, 15)
+colgap!(g.layout, 2, 15)
+g
+
+# label the subplots
+CairoMakie.text!(ax12, 0.1, -0.35, text = L"\textbf{V}", fontsize = 30)
+CairoMakie.text!(ax21, 0.15, 4.1, text = L"\textbf{U}", fontsize = 30)
+CairoMakie.text!(ax22, 0.1, 4.1, text = L"\textbf{Z}", fontsize = 30)
 g
 
 
@@ -116,13 +143,7 @@ g
 # save("./results/oneSpatialDimension/generatedData1D.png", g)
 
 
-g = Plots.plot(x, U, c = [:blue :red :magenta :orange :green], linewidth = 2, legend = false, size = (700, 400))
-g = Plots.plot!(x, (svd(Z).U[:,1:k]' .* [1, -1, 1, -1, -1])', c = [:blue :red :black :orange :green], linewidth = 2, linestyle = :dash, legend = false)
-# save("/Users/JSNorth/Desktop/Uplot.svg", g)
 
-g = Plots.plot(t, V, c = [:blue :red :magenta :orange :green], linewidth = 2, legend = false, size = (700, 400))
-g = Plots.plot!(t, (svd(Z).V[:,1:k]' .* [1, -1, 1, -1, -1])', c = [:blue :red :black :orange :green], linewidth = 2, linestyle = :dash, legend = false)
-# save("/Users/JSNorth/Desktop/Vplot.svg", g)
 
 #endregion
 
@@ -141,11 +162,15 @@ data = Data(Z, X, x, t, k)
 pars = Pars(data, ΩU, ΩV)
 
 
-posterior, pars = SampleSVD(data, pars; nits = 1000, burnin = 500)
+posterior, pars = SampleSVD(data, pars; nits = 10000, burnin = 5000)
+
 
 posterior.β_hat
 posterior.β_lower
 posterior.β_upper
+
+Plots.plot(posterior.β', label = false, size = (900, 600))
+Plots.hline!([β], label = false)
 
 posterior.D_hat
 posterior.D_lower
@@ -235,7 +260,7 @@ posteriorCoverage(Matrix((V[:,1:k]' .* trsfrm)'), posterior.V, 0.95)
 
 
 
-svdY = svd(Y).U[:,1:k] * diagm(svd(Y).S[1:k]) * svd(Y).V[:,1:k]'
+svdY = svd(Z).U[:,1:k] * diagm(svd(Z).S[1:k]) * svd(Z).V[:,1:k]'
 Y_hat = posterior.U_hat * diagm(posterior.D_hat) * posterior.V_hat'
 # Y_hat = mean(Yest)
 

@@ -21,6 +21,8 @@ t = range(0, 10, m)
 
 ΣU = MaternCorrelation(x, ρ = 3, ν = 3.5, metric = Euclidean())
 ΣV = MaternCorrelation(t, ρ = 3, ν = 3.5, metric = Euclidean())
+ΣU = IdentityCorrelation(x)
+ΣV = IdentityCorrelation(t)
 
 
 D = [40, 30, 20, 10, 5]
@@ -29,7 +31,7 @@ k = 5
 
 Random.seed!(3)
 # U, V, Y, Z = GenerateData(ΣU, ΣV, D, k, ϵ)
-U, V, Y, Z = GenerateData(ΣU, ΣV, D, k, 2, SNR = true)
+U, V, Y, Z = GenerateData(ΣU, ΣV, D, k, 5, SNR = true)
 
 Plots.plot(x, U, xlabel = "Space", ylabel = "Value", label = ["U" * string(i) for i in (1:k)'])
 Plots.plot(t, V, xlabel = "Time", ylabel = "Value", label = ["V" * string(i) for i in (1:k)'])
@@ -220,14 +222,44 @@ g = Plots.plot!(t, (svd(Z).V[:,1:k]' .* [1, -1, 1, -1, -1])', c = [:blue :red :m
 #region
 
 
-k = 5
+k = 50
 ΩU = MaternCorrelation(x, ρ = 3, ν = 3.5, metric = Euclidean())
 ΩV = MaternCorrelation(t, ρ = 3, ν = 3.5, metric = Euclidean())
+ΩU = IdentityCorrelation(x)
+ΩV = IdentityCorrelation(t)
 data = Data(Z, x, t, k)
 pars = Pars(data, ΩU, ΩV)
 
-posterior, pars = SampleSVD(data, pars; nits = 10000, burnin = 5000)
+posterior, pars = SampleSVD(data, pars; nits = 1000, burnin = 500)
 
+
+using MCMCDiagnosticTools
+
+ESSU = [ess(posterior.U[i,j,:]) for i in axes(posterior.U,1), j in axes(posterior.U, 2)]
+RHatU = [rhat(posterior.U[i,j,:]) for i in axes(posterior.U,1), j in axes(posterior.U, 2)]
+
+ESSV = [ess(posterior.V[i,j,:]) for i in axes(posterior.V,1), j in axes(posterior.V, 2)]
+RHatV = [rhat(posterior.V[i,j,:]) for i in axes(posterior.V,1), j in axes(posterior.V, 2)]
+
+ESSD = [ess(posterior.D[i,:]) for i in axes(posterior.D,1)]
+RHatD = [rhat(posterior.D[i,:]) for i in axes(posterior.D,1)]
+
+timeS = 5
+mean(ESSU) / timeS
+mean(ESSV) / timeS
+mean(ESSD) / timeS
+
+mean(ESSU)
+mean(RHatU) 
+mean(ESSV)
+mean(RHatV)
+mean(ESSD)
+mean(RHatD)
+
+
+
+ess_rhat(posterior.U[85,1,:])
+ess_rhat(posterior.U[50,3,:])
 
 posterior.D_hat
 posterior.D_lower
@@ -300,8 +332,6 @@ p6 = Plots.contourf(t, x, svdZ .- Y, title = "Algorithm - Truth", c = :balance, 
 g = Plots.plot(p1, p2, p3, p4, p5, p6, layout = l, size = (1400, 600))
 
 save("./docs/src/assets/surfaceEstimate.png", g)
-
-
 
 
 
