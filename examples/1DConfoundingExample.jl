@@ -40,100 +40,95 @@ Plots.contourf(x, t, Z', clim = extrema(Z))
 
 
 ########################################################################
-#### Space-Time covariates
+#### Space-Time covariates M2
 ########################################################################
 #region
 
-β = [-2, 0.6, 1.2, -0.9]
+βs = vcat(-2, 0.6)
+βt = 1.2
+βst = -0.9
+β = [βs; βt; βst]
+
+#### Spatial
+Xs = rand(MvNormal(zeros(n), ΣU.K), length(βs))
+Ws = Xs * βs
+
+Plots.plot(x, Ws)
+
+#### Temporal
+Xt = rand(MvNormal(zeros(m), ΣV.K), length(βt))
+Wt = Xt * βt
+
+Plots.plot(t, Wt)
+
+#### Spatio-temporal
+Ω = MaternCorrelation(x, t, ρ = 1, ν = 3.5, metric = Euclidean())
+Xst = rand(MvNormal(zeros(n*m), Ω.K), length(βst))
+
+Wst = reshape(Xst * βst, n, m)
+
+Plots.contourf(t, x, Wst)
+
+
+#### full covariates
+
+X = CreateDesignMatrix(n, m, Xt, Xs, Xst, intercept = false)
+β = vcat(βs, βt, βst)
+
+M = reshape(X * β, n, m)
+Z = Z + M
+
+#endregion
+
+
+########################################################################
+#### Space-Time covariates M3
+########################################################################
+#region
+
+βs = vcat(-2, 0.6)
+βt = 1.2
+βst = -0.9
+β = [βs; βt; βst]
 
 #### Spatial
 
-# βs = vcat(0.2, -0.3)
-# Xs = hcat(sin.((2*pi .* x) ./ 10), cos.((2*pi .* x) ./ 10))
-βs = vcat(1.5, -1, 2)
-# Xs = hcat(sin.((2*pi .* x) ./ 10))
-# Xs = hcat(exp.(-(x .- 1).^2), sin.((2*pi .* x) ./ 5))
-Xs = hcat(0.5 .- exp.(-(x .- 1).^2), sin.((2*pi .* x) ./ 5))
+ΣU2 = MaternCorrelation(x, ρ = 0.3, ν = 3.5, metric = Euclidean())
+Xs = rand(MvNormal(zeros(n), ΣU2.K), length(βs))
+
 Ws = Xs * βs
 
 Plots.plot(x, Ws)
 
 #### Temporal
 
-βt = vcat(0.5)
-# Xt = hcat(sin.((2*pi .* t) ./ 10) + cos.((2*pi .* t) ./ 10))
-Xt = hcat(Vector(t))
+ΣV2 = MaternCorrelation(t, ρ = 0.3, ν = 3.5, metric = Euclidean())
+Xt = rand(MvNormal(zeros(m), ΣV2.K), length(βt))
+
 Wt = Xt * βt
 
 Plots.plot(t, Wt)
 
 #### Spatio-temporal
 
-Ω = MaternCorrelation(x, t, ρ = 1, ν = 3.5, metric = Euclidean())
-βst = vcat(-0.6, 0.8)
-Xst = rand(MvNormal(zeros(n*m), Ω.K), length(βst))
-# Xst = rand(Normal(), n*m, length(βst))
+Ω2 = MaternCorrelation(x, t, ρ = 1, ν = 3.5, metric = Euclidean())
+Xst = rand(MvNormal(zeros(n*m), Ω2.K), length(βst))
+
 Wst = reshape(Xst * βst, n, m)
 
 Plots.contourf(t, x, Wst)
 
+Plots.heatmap(t, x, reshape(Xst, n, m), c = :balance)
 
+#### full covariates
 
+X = CreateDesignMatrix(n, m, Xt, Xs, Xst, intercept = false)
+β = vcat(βs, βt, βst)
 
-#### Full data set
-using Kronecker
-
-X = convert(Matrix, kronecker(Xt, Xs))
-β = [-1, 2]
-
-Z = Z + reshape(X * β, n, m)
-
-# Z = Z + reshape(repeat(Ws, m), n, m) + copy(reshape(repeat(Wt, n), m, n)') + Wst
-# Z = Z + Wst
-
-# Z = Z + reshape(repeat(Ws, m), n, m)
-# Z = Z + reshape(repeat(Wt, n), m, n)
-# Z = Z + Wst
-# Z = Z + reshape(repeat(Ws, m), n, m) + copy(reshape(repeat(Wt, n), m, n)') + Wst
-Plots.contourf(x, t, Z')
-
-# Plots.contourf(x, t, (reshape(repeat(Ws, m), n, m) + copy(reshape(repeat(Wt, n), m, n)') + Wst)')
+M = reshape(X * β, n, m)
+Z = Z + M
 
 #endregion
-
-
-# Xst = hcat(repeat(1:n, outer = (m,1)), repeat(1:m, inner = (n,1)))
-# Xst = Xst .* 0.5
-
-X = repeat(Xs, outer = (m,1))
-# X = repeat(Xt, inner = (n,1))
-# X = hcat(Xst)
-# X = hcat(repeat(Xs, outer = (m,1)), repeat(Xt, inner = (n,1)), Xst)
-
-Ps = diagm(ones(n)) - Xs * inv(Xs' * Xs) * Xs'
-
-inv(X' * X) * X' * reshape(Z, :)
-
-# plot(Ws)
-# plot!(mean(Z, dims = 2))
-
-# contourf(Z .- Ws)
-# contourf(Z .- mean(Z, dims = 2))
-
-# svdZ = svd(Z .- mean(Z, dims = 2))
-# Yhat = Ps * svdZ.U[:,1:k] * diagm(svdZ.S[1:k]) * svdZ.V[:,1:k]'
-
-# inv(X' * X) * X' * reshape(Z .- Yhat, :)
-# vcat(1, βs, βt, βst)
-
-
-# contourf(Ps * Y)
-# contourf(Y)
-
-# cor(hcat(X, reshape(Y, :)))
-
-# Ps * Xs * inv(Xs' * Xs) * Xs'
-
 
 ######################################################################
 #### Visualize Data
@@ -240,11 +235,11 @@ pars.V = V
 pars.D = D
 
 
-posterior, pars = SampleSVD(data, pars; nits = 1000, burnin = 500)
+posterior, pars = SampleSVD(data, pars; nits = 10000, burnin = 5000)
 
-posterior.β_hat
-posterior.β_lower
-posterior.β_upper
+round.(posterior.β_hat, digits = 3)
+round.(posterior.β_lower, digits = 3)
+round.(posterior.β_upper, digits = 3)
 
 posterior.D_hat
 posterior.D_lower
@@ -341,6 +336,18 @@ quantile(reshape(svdY .- Y, :), Vector(range(0, 1, step = 0.1)))'
 # Plots.plot(p1, p2, p3, p4, p5, p6, layout = l, size = (1400, 600))
 
 # savefig("./results/oneSpatialDimension/recoveredplots.png")
+
+#endregion
+
+
+########################################################################
+#### Y coverage
+########################################################################
+#region
+
+Ypost = [posterior.U[:,:,i] * diagm(posterior.D[:,i]) * posterior.V[:,:,i]' for i in axes(posterior.U,3)]
+
+posteriorCoverage(Y, Ypost, 0.95)
 
 #endregion
 

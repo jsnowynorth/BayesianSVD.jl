@@ -21,8 +21,8 @@ t = range(0, 10, m)
 
 ΣU = MaternCorrelation(x, ρ = 3, ν = 3.5, metric = Euclidean())
 ΣV = MaternCorrelation(t, ρ = 3, ν = 3.5, metric = Euclidean())
-ΣU = IdentityCorrelation(x)
-ΣV = IdentityCorrelation(t)
+# ΣU = IdentityCorrelation(x)
+# ΣV = IdentityCorrelation(t)
 
 
 D = [40, 30, 20, 10, 5]
@@ -31,7 +31,7 @@ k = 5
 
 Random.seed!(3)
 # U, V, Y, Z = GenerateData(ΣU, ΣV, D, k, ϵ)
-U, V, Y, Z = GenerateData(ΣU, ΣV, D, k, 5, SNR = true)
+U, V, Y, Z = GenerateData(ΣU, ΣV, D, k, 1, SNR = true)
 
 Plots.plot(x, U, xlabel = "Space", ylabel = "Value", label = ["U" * string(i) for i in (1:k)'])
 Plots.plot(t, V, xlabel = "Time", ylabel = "Value", label = ["V" * string(i) for i in (1:k)'])
@@ -222,15 +222,18 @@ g = Plots.plot!(t, (svd(Z).V[:,1:k]' .* [1, -1, 1, -1, -1])', c = [:blue :red :m
 #region
 
 
-k = 50
+k = 5
 ΩU = MaternCorrelation(x, ρ = 3, ν = 3.5, metric = Euclidean())
 ΩV = MaternCorrelation(t, ρ = 3, ν = 3.5, metric = Euclidean())
-ΩU = IdentityCorrelation(x)
-ΩV = IdentityCorrelation(t)
+# ΩU = IdentityCorrelation(x)
+# ΩV = IdentityCorrelation(t)
 data = Data(Z, x, t, k)
 pars = Pars(data, ΩU, ΩV)
 
-posterior, pars = SampleSVD(data, pars; nits = 1000, burnin = 500)
+pars.σU = D.^2 ./ (n-1)
+pars.σV = D.^2 ./ (m-1)
+
+posterior, pars = SampleSVD(data, pars; nits = 10000, burnin = 5000)
 
 
 using MCMCDiagnosticTools
@@ -244,7 +247,7 @@ RHatV = [rhat(posterior.V[i,j,:]) for i in axes(posterior.V,1), j in axes(poster
 ESSD = [ess(posterior.D[i,:]) for i in axes(posterior.D,1)]
 RHatD = [rhat(posterior.D[i,:]) for i in axes(posterior.D,1)]
 
-timeS = 5
+timeS = 3
 mean(ESSU) / timeS
 mean(ESSV) / timeS
 mean(ESSD) / timeS

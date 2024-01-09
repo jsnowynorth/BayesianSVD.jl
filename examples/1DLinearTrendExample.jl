@@ -52,6 +52,8 @@ Plots.contourf(x, t, M')
 
 #endregion
 
+
+
 ######################################################################
 #### Visualize Data
 ######################################################################
@@ -168,6 +170,10 @@ posterior, pars = SampleSVD(data, pars; nits = 10000, burnin = 5000)
 posterior.β_hat
 posterior.β_lower
 posterior.β_upper
+
+[std(posterior.β[i,:]) for i in 1:4]
+
+posterior.σ_hat .* inv(data.X' * data.X)
 
 Plots.plot(posterior.β', label = false, size = (900, 600))
 Plots.hline!([β], label = false)
@@ -290,6 +296,18 @@ Plots.plot(p1, p2, p3, p4, p5, p6, layout = l, size = (1400, 600))
 # Plots.plot(p1, p2, p3, p4, p5, p6, layout = l, size = (1400, 600))
 
 # savefig("./results/oneSpatialDimension/recoveredplots.png")
+
+#endregion
+
+
+########################################################################
+#### Y coverage
+########################################################################
+#region
+
+Ypost = [posterior.U[:,:,i] * diagm(posterior.D[:,i]) * posterior.V[:,:,i]' for i in axes(posterior.U,3)]
+
+posteriorCoverage(Y, Ypost, 0.95)
 
 #endregion
 
