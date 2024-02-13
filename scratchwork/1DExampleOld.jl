@@ -150,6 +150,71 @@ pars = Pars(data, ΩU, ΩV)
 posterior, pars = SampleSVD(data, pars; nits = 1000, burnin = 500)
 
 
+using MCMCDiagnosticTools
+
+ESSU = [ess(posterior.U[i,j,:]) for i in axes(posterior.U,1), j in axes(posterior.U, 2)]
+RHatU = [rhat(posterior.U[i,j,:]) for i in axes(posterior.U,1), j in axes(posterior.U, 2)]
+
+ESSV = [ess(posterior.V[i,j,:]) for i in axes(posterior.V,1), j in axes(posterior.V, 2)]
+RHatV = [rhat(posterior.V[i,j,:]) for i in axes(posterior.V,1), j in axes(posterior.V, 2)]
+
+ESSD = [ess(posterior.D[i,:]) for i in axes(posterior.D,1)]
+RHatD = [rhat(posterior.D[i,:]) for i in axes(posterior.D,1)]
+
+timeS = 1 * 60
+mean(ESSU) / timeS
+mean(ESSV) / timeS
+mean(ESSD) / timeS
+
+mean(ESSU)
+mean(RHatU) 
+mean(ESSV)
+mean(RHatV)
+mean(ESSD)
+mean(RHatD)
+
+
+
+ess_rhat(posterior.U[85,1,:])
+ess_rhat(posterior.U[50,3,:])
+
+posterior.D_hat
+posterior.D_lower
+posterior.D_upper
+posterior.σ_hat
+posterior.σU_hat
+posterior.σV_hat
+
+[hpd(posterior.ρU[i,:]) for i in axes(posterior.ρU, 1)]
+[hpd(posterior.ρV[i,:]) for i in axes(posterior.ρV, 1)]
+
+Plots.plot(posterior.ρU')
+Plots.plot(posterior.ρV')
+
+var(U, dims = 1)
+var(V, dims = 1)
+
+mean((posterior.σU ./ (posterior.D.^2)), dims = 2)
+mean((posterior.σV ./ (posterior.D.^2)), dims = 2)
+
+[hpd((posterior.σU ./ (posterior.D.^2))[:,i]) for i in axes(posterior.D, 1)]
+[hpd((posterior.σV ./ (posterior.D.^2))[:,i]) for i in axes(posterior.D, 1)]
+
+D.^2 ./ (n-1)
+[hpd(posterior.σU[i,:]) for i in axes(posterior.σU, 1)]
+
+D.^2 ./ (m-1)
+[hpd(posterior.σV[i,:]) for i in axes(posterior.σU, 1)]
+
+posterior.σU_hat ./ ((posterior.D_hat.^2))
+posterior.σV_hat ./ ((posterior.D_hat.^2))
+
+posterior.D_hat ./ posterior.σU_hat
+posterior.D_hat ./ posterior.σV_hat
+
+
+
+
 
 Plots.plot(posterior.D', label = false, size = (900, 600))
 Plots.hline!([D], label = false)
@@ -167,12 +232,42 @@ end
 
 g = Plots.plot(posterior, x, size = (800, 400), basis = 'U', linewidth = 2, c = [:blue :red :magenta :orange :green], tickfontsize = 14, label = false, title = "U")
 g = Plots.plot!(x, (U' .* trsfrm)', label = false, color = "black", linewidth = 2)
-# save("figures/Ubasis.png", g)
+# save("./docs/src/assets/Ubasis.png", g)
 
 g = Plots.plot(posterior, t, size = (800, 400), basis = 'V',  linewidth = 2, c = [:blue :red :magenta :orange :green], tickfontsize = 14, label = false, title = "V")
 g = Plots.plot!(t, (V' .* trsfrm)', label = false, color = "black", linewidth = 2)
-# save("figures/Vbasis.png", g)
+# save("./docs/src/assets/Vbasis.png", g)
 
+svdZ = svd(Z).U[:,1:k] * diagm(svd(Z).S[1:k]) * svd(Z).V[:,1:k]'
+Z_hat = posterior.U_hat * diagm(posterior.D_hat) * posterior.V_hat'
+Z_hat_diff = mean([posterior.U[:,:,i] * diagm(posterior.D[:,i]) * posterior.V[:,:,i]' .- Y for i in axes(posterior.U,3)])
+
+lims = (-1.05, 1.05).*maximum(abs, Z)
+
+l = Plots.@layout [a b c; d e f]
+p1 = Plots.contourf(t, x, Z_hat, title = "Y Hat", c = :balance, clim = lims)
+p2 = Plots.contourf(t, x, Y, title = "Truth", c = :balance, clim = lims)
+p3 = Plots.contourf(t, x, svdZ, title = "Algorithm", c = :balance, clim = lims)
+p4 = Plots.contourf(t, x, Z_hat .- Y, title = "Y Hat - Truth", c = :balance, clim = (-0.55, 0.55))
+p5 = Plots.contourf(t, x, Z, title = "Observed", c = :balance, clim = lims)
+p6 = Plots.contourf(t, x, svdZ .- Y, title = "Algorithm - Truth", c = :balance, clim = (-0.55, 0.55))
+g = Plots.plot(p1, p2, p3, p4, p5, p6, layout = l, size = (1400, 600))
+
+# save("./docs/src/assets/surfaceEstimate.png", g)
+
+
+
+g = Plots.plot(posterior, x, size = (800, 400), basis = 'U', linewidth = 2, c = [:blue :red :magenta :orange :green], tickfontsize = 14, label = false, title = "U")
+g = Plots.plot!(x, (U' .* trsfrm)', label = false, color = "black", linewidth = 2)
+g = Plots.plot!(x, svd(Z).U[:,1:data.k], label = false, linestyle = :dash, linewidth = 1.5, c = [:blue :red :magenta :orange :green])
+# save("/Users/JSNorth/Desktop/UplotEst.svg", g)
+# save("/Users/JSNorth/Desktop/UplotEst.png", g)
+
+g = Plots.plot(posterior, t, size = (800, 400), basis = 'V',  linewidth = 2, c = [:blue :red :magenta :orange :green], tickfontsize = 14, label = false, title = "V")
+g = Plots.plot!(t, (V' .* trsfrm)', label = false, color = "black", linewidth = 2)
+g = Plots.plot!(t, svd(Z).V[:,1:data.k], c = [:blue :red :magenta :orange :green], linestyle = :dash, label = false, linewidth = 1.5)
+# save("/Users/JSNorth/Desktop/VplotEst.svg", g)
+# save("/Users/JSNorth/Desktop/VplotEst.png", g)
 
 
 
@@ -195,6 +290,39 @@ posteriorCoverage(Matrix((U[:,1:k]' .* trsfrm)'), posterior.U, 0.95)
 posteriorCoverage(Matrix((V[:,1:k]' .* trsfrm)'), posterior.V, 0.95)
 
 
+
+
+svdY = svd(Z).U[:,1:k] * diagm(svd(Z).S[1:k]) * svd(Z).V[:,1:k]'
+Y_hat = posterior.U_hat * diagm(posterior.D_hat) * posterior.V_hat'
+# Y_hat = mean(Yest)
+
+Y_hat_diff = mean([posterior.U[:,:,i] * diagm(posterior.D[:,i]) * posterior.V[:,:,i]' .- Y for i in axes(posterior.U,3)])
+
+lims = (-1.5, 1.5)
+
+
+l = Plots.@layout [a b c; d e f]
+p1 = Plots.contourf(t, x, Y_hat, title = "Y Hat", c = :balance, clim = (-3, 3))
+p2 = Plots.contourf(t, x, Y, title = "Truth", c = :balance, clim = (-3, 3))
+p3 = Plots.contourf(t, x, svdY, title = "Algorithm", c = :balance, clim = (-3, 3))
+p4 = Plots.contourf(t, x, Y_hat .- Y, title = "Y Hat - Truth", c = :balance, clim = (-0.4, 0.4))
+p5 = Plots.contourf(t, x, Y, title = "Observed", c = :balance, clim = (-3, 3))
+p6 = Plots.contourf(t, x, svdY .- Y, title = "Algorithm - Truth", c = :balance, clim = (-0.4, 0.4))
+Plots.plot(p1, p2, p3, p4, p5, p6, layout = l, size = (1400, 600))
+
+
+
+# l = Plots.@layout [a b c; d e f]
+# p1 = Plots.heatmap(t, x, Y_hat, title = "Y Hat", c = :balance, clim = (-3, 3))
+# p2 = Plots.heatmap(t, x, Φ * D * Ψ', title = "Truth", c = :balance, clim = (-3, 3))
+# p3 = Plots.heatmap(t, x, svdY, title = "Algorithm", c = :balance, clim = (-3, 3))
+# p4 = Plots.heatmap(t, x, Y_hat_diff, title = "Y Hat - Truth", c = :balance, clim = (-0.4, 0.4))
+# p5 = Plots.heatmap(t, x, Y, title = "Observed", c = :balance, clim = (-3, 3))
+# p6 = Plots.heatmap(t, x, svdY .- (Φ * D * Ψ'), title = "Algorithm - Truth", c = :balance, clim = (-0.4, 0.4))
+# Plots.plot(p1, p2, p3, p4, p5, p6, layout = l, size = (1400, 600))
+
+# savefig("./results/oneSpatialDimension/recoveredplots.png")
+
 #endregion
 
 
@@ -216,6 +344,42 @@ vbounds = (-1.0, 1.0) .* vbounds
 colorlist = [:blue, :red, :magenta, :orange, :green]
 LW = 2
 transparencyValue = 0.3
+
+#### 5 x 2 basis function plot
+g = CairoMakie.Figure(resolution = (1000, 1200))
+ax1 = [CairoMakie.Axis(g[i, 1], limits = ((-5,5), ubounds)) for i in 1:5]
+ax2 = [CairoMakie.Axis(g[i, 2], limits = ((0,10), vbounds)) for i in 1:5]
+
+ax1[5].xlabel = "Space"
+ax2[5].xlabel = "Time"
+
+Ulabels = [L"\textbf{u}_{%$i}" for i in 1:5]
+Vlabels = [L"\textbf{v}_{%$i}" for i in 1:5]
+
+for (i, ax) in enumerate(ax1)
+    CairoMakie.band!(ax, x, posterior.U_lower[:,i], posterior.U_upper[:,i], color = (:blue, transparencyValue))
+    CairoMakie.lines!(ax, x, svd(Z).U[:,i], color = :red, linewidth = LW)
+    CairoMakie.lines!(ax, x, posterior.U_hat[:,i], labels = false, color = :blue, linewidth = LW)
+    CairoMakie.lines!(ax, x, U[:,i] .* trsfrm[i], labels = false, color = :black, linewidth = LW)
+    CairoMakie.text!(ax, 4, 0.18, text = Ulabels[i], fontsize = 30)
+end
+
+for (i, ax) in enumerate(ax2)
+    # ax.title = "V$i"
+    CairoMakie.band!(ax, t, posterior.V_lower[:,i], posterior.V_upper[:,i], color = (:blue, transparencyValue))
+    CairoMakie.lines!(ax, t, svd(Z).V[:,i], color = :red, linewidth = LW)
+    CairoMakie.lines!(ax, t, posterior.V_hat[:,i], labels = false, color = :blue, linewidth = LW)
+    CairoMakie.lines!(ax, t, V[:,i] .* trsfrm[i], labels = false, color = :black, linewidth = LW)
+    CairoMakie.text!(ax, 9, 0.22, text = Vlabels[i], fontsize = 30)
+end
+
+hidexdecorations!.(ax1[1:4])
+hidexdecorations!.(ax2[1:4])
+g
+
+# save("/Users/JSNorth/Documents/Presentations/ClimateExtremes2023/estimatedBasis1DVertical.png", g)
+
+#### horizontal configuration
 
 
 #### 5 x 2 basis function plot
@@ -247,7 +411,7 @@ end
 
 g
 
-# save("figures/estimatedBasis1D.png", g)
+# save("/Users/JSNorth/Documents/Presentations/LBLMLGroup/estimatedBasis1D.png", g)
 
 
 
@@ -318,13 +482,11 @@ CairoMakie.hideydecorations!(ax13, grid = false)
 CairoMakie.hideydecorations!(ax23, grid = false)
 g
 
-# save("figures/estimatedSurface1D.png", g)
+# save("/Users/JSNorth/Documents/Presentations/LBLMLGroup/estimatedSurface1D.png", g)
 
 
 
 #endregion
-
-
 
 ########################################################################
 #### Recreate data visual but with UQ estimates
@@ -354,6 +516,8 @@ g
 
 
 # plot the D Matrix
+# Dlabels = [L"\textbf{d}_{%$i, %$i}" for i in 1:5]
+# Dlabels = ["(" * string(round(posterior.D_lower[i], digits = 3)) * ", " * string(round(posterior.D_upper[i], digits = 3)) * ")" for i in 1:5]
 Dlabels = [L"(\textbf{d}_{%$i, %$i}^L, \textbf{d}_{%$i, %$i}^U)" for i in 1:5]
 
 for i in 1:5
@@ -371,7 +535,7 @@ for i in 1:5
 end
 g
 
-
+Point2f.(posterior.U_lower[:,i], x)
 # plot spatial basis functions
 for i in axes(U, 2)
     CairoMakie.lines!(ax21, posterior.U_hat[:,i], x, label = Dlabels[i], color = colorlist[i], linewidth = LW)
@@ -389,6 +553,7 @@ hm = CairoMakie.contourf!(ax22, t, x, Z',
     levels = range(crange[1], crange[2], step = (crange[2]-crange[1])/nsteps))
 
 #
+# CairoMakie.Colorbar(g[1:2,3], hm, ticks = round.(range(crange[1], crange[2], length = nticks), digits = 3))
 g
 
 
@@ -414,7 +579,7 @@ rowgap!(g.layout, 1, 15)
 g
 
 
-# save("figures/logo.png", g)
+save("examples/logo.png", g)
 
 
 #endregion

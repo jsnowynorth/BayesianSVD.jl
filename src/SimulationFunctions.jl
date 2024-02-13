@@ -29,7 +29,7 @@ function PON(n, k, Σ)
 
     Z = Array{Float64}(undef, n, k)
     X = Array{Float64}(undef, n, k)
-    A = ones(n)
+    # A = ones(n)
 
     for i in 1:k
       # z = rand(MvNormal(zeros(n), Σ.K))
@@ -51,7 +51,7 @@ function PON(n, k, Σ::Vector{T}) where T <: Correlation
 
   Z = Array{Float64}(undef, n, k)
   X = Array{Float64}(undef, n, k)
-  A = ones(n)
+  # A = ones(n)
 
   for i in 1:k
     # z = rand(MvNormal(zeros(n), Σ[i].K))
