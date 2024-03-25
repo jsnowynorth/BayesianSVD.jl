@@ -29,11 +29,8 @@ function PON(n, k, Σ)
 
     Z = Array{Float64}(undef, n, k)
     X = Array{Float64}(undef, n, k)
-    # A = ones(n)
 
     for i in 1:k
-      # z = rand(MvNormal(zeros(n), Σ.K))
-      # Z[:,i] = z - Σ.K * A * inv(A' * Σ.K * A) * (A'*z)
       Z[:,i] = rand(MvNormal(zeros(n), Σ.K))
     end
   
@@ -51,11 +48,8 @@ function PON(n, k, Σ::Vector{T}) where T <: Correlation
 
   Z = Array{Float64}(undef, n, k)
   X = Array{Float64}(undef, n, k)
-  # A = ones(n)
 
   for i in 1:k
-    # z = rand(MvNormal(zeros(n), Σ[i].K))
-    # Z[:,i] = z - Σ[i].K * A * inv(A' * Σ[i].K * A) * (A'*z)
     Z[:,i] = rand(MvNormal(zeros(n), Σ[i].K))
   end
 
@@ -144,7 +138,7 @@ function GenerateData(ΣU::Correlation, ΣV::Correlation, D, k, ϵ; SNR = false)
   
 end
 
-function GenerateData(ΣU::Vector{T}, ΣV::Vector{T}, D, k, ϵ; SNR = false) where T <: Correlation
+function GenerateData(ΣU::Vector{T1}, ΣV::Vector{T2}, D, k, ϵ; SNR = false) where {T1 <: Correlation, T2 <: Correlation}
 
   n = size(ΣU[1].K,1)
   m = size(ΣV[1].K,1)
@@ -156,8 +150,6 @@ function GenerateData(ΣU::Vector{T}, ΣV::Vector{T}, D, k, ϵ; SNR = false) whe
   if SNR
 
     η = rand(Normal(), n, m)
-    # A = ones(n*m)
-    # η = reshape(reshape(η, :) - A * inv(A' * A) * (A'*reshape(η, :)), n, m)
   
     σ = sqrt.(var(Y) ./ (ϵ * var(η))) # set the standard deviation
     Z = Y + σ .* η
@@ -165,8 +157,6 @@ function GenerateData(ΣU::Vector{T}, ΣV::Vector{T}, D, k, ϵ; SNR = false) whe
   else
 
     η = rand(Normal(0, sqrt(ϵ)), n, m)
-    # A = ones(n*m)
-    # η = reshape(reshape(η, :) - ϵ * A * inv(A' * ϵ * A) * (A'*reshape(η, :)), n, m)
   
     Z = Y + η
 

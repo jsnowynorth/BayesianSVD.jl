@@ -52,6 +52,14 @@ mutable struct SparseCorrelation <: DependentCorrelation
     logdet::Float64
 end
 
+mutable struct ARCorrelation <: DependentCorrelation
+    d::Matrix{Float64}
+    ρ::Float64
+    K::Array{Float64}
+    Kinv::Array{Float64}
+    logdet::Float64
+end
+
 
 ######################################################################
 #### Identity Functions
@@ -432,6 +440,59 @@ end
 Base.copy(C::SparseCorrelation) = SparseCorrelation(C)
 
 
+
+######################################################################
+#### Autoregressive Correlation Functions
+######################################################################
+
+"""
+    ARCorrelation(t; ρ = 1, metric = Euclidean())
+
+Create an AR(1) correlation matrix of type `ARCorrelation <: DependentCorrelation <: Correlation`.
+
+See also [`IdentityCorrelation`](@ref), [`ExponentialCorrelation`](@ref), [`GaussianCorrelation`](@ref), and [`MaternCorrelation`](@ref).
+
+# Arguments
+- t: vector of times
+
+# Optional Arguments
+- ρ = 1: correlation parameter
+- metric = Euclidean(): metric used for computing the distance between points. All distances in Distances.jl are supported.
+
+# Examples
+```
+m = 100
+n = 100
+x = range(-5, 5, n)
+t = range(0, 10, m)
+X = reduce(hcat,reshape([[x, y] for x = x, y = y], Nx * Ny))'
+
+Ω = SparseCorrelation(x, ρ = 1, metric = Euclidean())
+Ω = SparseCorrelation(x, y, ρ = 1, metric = Euclidean())
+Ω = SparseCorrelation(X', ρ = 1, metric = Euclidean())
+``` 
+"""
+function ARCorrelation(t; ρ = 0.5)
+
+    T = range(1, length(t))
+    d = [abs(T[i] - T[j]) for i in axes(T, 1), j in axes(T, 1)]
+    K = ρ .^ d
+
+    ARCorrelation(d, ρ, K, inv(K), logdet(K))
+
+end
+
+function ARCorrelation(C::ARCorrelation)
+
+    K = C.ρ .^ C.d
+    ARCorrelation(C.d, C.ρ, K, inv(K), logdet(K))
+
+end
+
+Base.copy(C::ARCorrelation) = ARCorrelation(C)
+
+
+
 ######################################################################
 #### Update Correlation Kernel
 ######################################################################
@@ -450,6 +511,10 @@ end
 
 function updateCorrelation(C::SparseCorrelation)
     return SparseCorrelation(C)
+end
+
+function updateCorrelation(C::ARCorrelation)
+    return ARCorrelation(C)
 end
 
 ######################################################################
@@ -483,6 +548,12 @@ Base.show(io::IO, C::SparseCorrelation) =
   print(io, "Kernel: Sparse\n",
     " ├─── Metric: ", typeof(C.metric), '\n',
     " └─── Range: ", C.r, '\n')
+#
+
+
+Base.show(io::IO, C::ARCorrelation) =
+  print(io, "Kernel: AR(1)\n",
+    " └─── Correlation: ", C.ρ, '\n')
 #
 
 ######################################################################

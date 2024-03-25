@@ -47,6 +47,7 @@ export
 
     # overall sample function
     SampleSVD,
+    SampleSVDstatic,
 
     # Correlation Kernels
     IdentityCorrelation,
@@ -54,9 +55,10 @@ export
     GaussianCorrelation,
     MaternCorrelation,
     SparseCorrelation,
-    # Correlation,
-    # IndependentCorrelation,
-    # DependentCorrelation,
+    ARCorrelation,
+    Correlation,
+    IndependentCorrelation,
+    DependentCorrelation,
 
     # Parameter and Data
     Pars,
