@@ -376,7 +376,8 @@ function update_ρU(data::Data, pars::Pars, Ω::T) where T <: DependentCorrelati
     for i in 1:data.k
         propsd = pars.propSU[i]
         # ρprop = rand(TruncatedNormal(pars.ΩU[i].ρ, propsd, 0, maximum(pars.ΩU[1].d)/2))
-        ρprop = rand(truncated(Normal(pars.ΩU[i].ρ, propsd), 0, maximum(pars.ΩU[1].d)/2))
+        # ρprop = rand(truncated(Normal(pars.ΩU[i].ρ, propsd), 0, maximum(pars.ΩU[1].d)/2))
+        ρprop = rand(truncated(Normal(pars.ΩU[i].ρ, propsd), 0, pars.ρUMax[i]))
         Cprop = copy(pars.ΩU[i])
         Cprop.ρ = ρprop
         Cprop = updateCorrelation(Cprop)
@@ -411,7 +412,8 @@ function update_ρV(data::Data, pars::Pars, Ω::T) where T <: DependentCorrelati
     for i in 1:data.k
         propsd = pars.propSV[i]
         # ρprop = rand(TruncatedNormal(pars.ΩV[i].ρ, propsd, 0, maximum(pars.ΩV[1].d)/2))
-        ρprop = rand(truncated(Normal(pars.ΩV[i].ρ, propsd), 0, maximum(pars.ΩV[1].d)/2))
+        # ρprop = rand(truncated(Normal(pars.ΩV[i].ρ, propsd), 0, maximum(pars.ΩV[1].d)/2))
+        ρprop = rand(truncated(Normal(pars.ΩV[i].ρ, propsd), 0, pars.ρVMax[i]))
         Cprop = copy(pars.ΩV[i])
         Cprop.ρ = ρprop
         Cprop = updateCorrelation(Cprop)

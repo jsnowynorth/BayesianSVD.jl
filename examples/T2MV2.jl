@@ -92,6 +92,8 @@ t2m = ncread(fileName, "VAR_2T") .- 273.15
 
 Zobs = t2m .- mean(t2m)
 
+# Zobs = Zobs ./ var(Zobs)
+
 
 Nx, Ny, Nt = size(Zobs) # get dimensions
 
@@ -103,18 +105,17 @@ Z = convert(Matrix{Float64}, reshape(Zobs, Nx*Ny, Nt)) # orient data
 k = 10 # rank or number of basis functions
 
 
-# X = 
-moinds = mod.(1:Nt, 12)
-moinds[moinds .== 0] .= 12
+# moinds = mod.(1:Nt, 12)
+# moinds[moinds .== 0] .= 12
 
-X = reduce(hcat, [moinds .== i for i in 1:12])
-X = convert(Array{Float64,2}, X)
-X[:,1] = fill(1, Nt)
-X = hcat(X, 1:Nt)
+# X = reduce(hcat, [moinds .== i for i in 1:12])
+# X = convert(Array{Float64,2}, X)
+# X[:,1] = fill(1, Nt)
+# X = hcat(X, 1:Nt)
 
-betas = inv(X' * X) * X' * Z'
+# betas = inv(X' * X) * X' * Z'
 
-Z = Z .- (X * betas)'
+# Z = Z .- (X * betas)'
 
 
 
@@ -135,9 +136,9 @@ svdV = svdZ.V[:,1:k]
 (cumsum(svdZ.S.^2) ./ sum(svdZ.S.^2))[1:10]
 
 
-using DelimitedFiles
-writedlm("/Users/JSNorth/Desktop/lengthScales/Ut2m.csv", hcat(locs', svdZ.U[:,1:50]), ',')
-writedlm("/Users/JSNorth/Desktop/lengthScales/Vt2m.csv", hcat(t, svdZ.V[:,1:50]), ',')
+# using DelimitedFiles
+# writedlm("/Users/JSNorth/Desktop/lengthScales/Ut2m.csv", hcat(locs', svdZ.U[:,1:50]), ',')
+# writedlm("/Users/JSNorth/Desktop/lengthScales/Vt2m.csv", hcat(t, svdZ.V[:,1:50]), ',')
 
 
 size(svdU)
@@ -155,8 +156,50 @@ Plots.contourf(svdU[:,:,10], c = :balance, size = (1000, 600))
 
 
 Plots.plot(svdZ.V[:,1], size = (1000, 600))
+Plots.plot(svdZ.V[:,2], size = (1000, 600))
+Plots.plot(svdZ.V[:,3], size = (1000, 600))
+Plots.plot(svdZ.V[:,4], size = (1000, 600))
+Plots.plot(svdZ.V[:,5], size = (1000, 600))
 
 #endregion
+
+
+########################################################################
+#### run BSVD
+########################################################################
+#region
+
+Nx, Ny, Nt = size(Zobs)
+
+locs = reduce(hcat,reshape([[x, y] for x = lon, y = lat], Nx * Ny))
+
+t = convert(Vector{Float64}, Vector(1:Nt))
+Z = convert(Matrix{Float64}, reshape(anomalyAll, Nx*Ny, Nt))
+
+k = 10
+ΩU = MaternCorrelation(lon, lat, ρ = 400, ν = 3.5, metric = Haversine(6371))
+ΩV = GaussianCorrelation(t, ρ = 3)
+
+data = Data(Z, locs, t, k)
+pars = Pars(data, ΩU, ΩV)
+
+posterior, pars = SampleSVD(data, pars; nits = 100, burnin = 50)
+
+# jldsave("../BSVDresults/run_1.jld2"; data, pars, posterior)
+# data, pars, posterior = jldopen("../results/PDOResults/PDO.jld2")
+# @save "../BSVDresults/run_1.jld2" data pars posterior
+
+
+
+Plots.plot(posterior.ρU')
+Plots.plot(posterior.ρV')
+
+mean(posterior.ρU, dims = 2)
+mean(posterior.ρV, dims = 2)
+
+#endregion
+
+
 
 
 
@@ -324,7 +367,7 @@ g = with_theme(UDiffPlots, bold_theme)
 
 basis_start = 5
 g = with_theme(UDiffPlots, bold_theme)
-save("figures/Ubasis610.png", g)
+# save("figures/Ubasis610.png", g)
 
 
 #endregion

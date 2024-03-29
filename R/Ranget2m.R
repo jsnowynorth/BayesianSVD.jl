@@ -12,7 +12,7 @@ library(geosphere)
 # load data ---------------------------------------------------------------
 
 
-U = read_csv('~/Desktop/Ut2m.csv', col_names = F, name_repair = ~c("lon", "lat", paste0("U", 1:50)))
+U = read_csv('../data/Ut2m.csv', col_names = F, name_repair = ~c("lon", "lat", paste0("U", 1:50)))
 
 U = U %>%
   mutate(across(c(U1:U50), ~ (. - mean(.)) / sd(.)))
@@ -90,7 +90,7 @@ lines(varioFit)
 
 # replicate using t2m data ------------------------------------------------
 
-U = read_csv('~/Desktop/Ut2m.csv', col_names = F, name_repair = ~c("lat", "lon", paste0("U", 1:50)))
+U = read_csv('../data/Ut2m.csv', col_names = F, name_repair = ~c("lat", "lon", paste0("U", 1:50)))
 
 U = U %>%
   mutate(across(c(U1:U50), ~ (. - mean(.)) / sd(.)))
@@ -118,15 +118,16 @@ summary(FittedModel)
 Ests = tibble(U = 1:50, sill = NA, range = NA)
 for(i in 1:50){
   
-  # TheVariogram=variogram(as.formula(paste0("U", i, "~1")), data=U)
-  TheVariogram=variogram(as.formula(paste0("U", i, "~lat+lon")), data=U)
+  TheVariogram=variogram(as.formula(paste0("U", i, "~1")), data=U)
+  # TheVariogram=variogram(as.formula(paste0("U", i, "~lat+lon")), data=U)
   # TheVariogramModel <- vgm(psill=1.6, model="Mat", nugget=0.05, range=125, kappa = 3.5)
-  TheVariogramModel <- vgm(model="Mat", range=150, kappa = 3.5)
+  TheVariogramModel <- vgm(model="Mat", range=150, kappa = 3.5, nugget=0.00001)
   FittedModel <- fit.variogram(TheVariogram, model=TheVariogramModel)
   
-  Ests$sill[i] = FittedModel$psill[2]
+  # Ests$sill[i] = FittedModel$psill[2]
   # Ests$range[i] = FittedModel$range[2]
-  Ests$range[i] = FittedModel$range
+  Ests$sill[i] = FittedModel$psill[2]
+  Ests$range[i] = FittedModel$range[2]
 }
 
 hist(Ests$range, breaks = 20)
@@ -142,13 +143,13 @@ ggplot(Ests, aes(x = U, y = range)) +
   theme(axis.text = element_text(size = 16, face="bold"),
         axis.title = element_text(size = 20, face="bold"))
 
-# ggsave("/Users/JSNorth/Documents/GitHub/BayesianSpatialBasisFunctions/figures/lengthScaleFiguret2m.png")
+# ggsave("../figures/lengthScaleFiguret2m.png")
 
 
 
 
 
-Urange = read_csv("/Users/JSNorth/Desktop/Ut2mRange.csv", col_names = F, name_repair = ~c("mean", "lower", "upper"))
+Urange = read_csv("../data/Ut2mRange.csv", col_names = F, name_repair = ~c("mean", "lower", "upper"))
 
 Uvals = cbind(Ests[1:10,], Urange)
 

@@ -23,21 +23,25 @@ D = [40, 30, 20, 10, 5]
 k = 5
 ϵ = 0.1
 
-ρu = sort(rand(Uniform(1, 4), k), rev = true)
-ρv = sort(rand(Uniform(1, 4), k), rev = true)
+
+# ρu = sort(rand(truncated(Exponential(3), lower = 0.5, upper = 4.5), k), rev = true)
+# ρv = sort(rand(truncated(Exponential(3), lower = 0.5, upper = 4.5), k), rev = true)
+
+ρu = sort(rand(Uniform(0.5, 4.5), k), rev = true)
+ρv = sort(rand(Uniform(0.5, 4.5), k), rev = true)
 
 
 ΣUvariable = [MaternCorrelation(x, ρ = ρu[i], ν = 3.5, metric = Euclidean()) for i in 1:k]
 ΣVvariable = [MaternCorrelation(t, ρ = ρv[i], ν = 3.5, metric = Euclidean()) for i in 1:k]
 
-ΣUstatic = MaternCorrelation(x, ρ = 3, ν = 3.5, metric = Euclidean())
-ΣVstatic = MaternCorrelation(t, ρ = 3, ν = 3.5, metric = Euclidean())
+ΣUstatic = MaternCorrelation(x, ρ = 1, ν = 3.5, metric = Euclidean())
+ΣVstatic = MaternCorrelation(t, ρ = 1, ν = 3.5, metric = Euclidean())
 
 Random.seed!(3)
-Uvariable, Vvariable, Yvariable, Zvariable = GenerateData(ΣUvariable, ΣVvariable, D, k, 2, SNR = true)
+Uvariable, Vvariable, Yvariable, Zvariable = GenerateData(ΣUvariable, ΣVvariable, D, k, 1, SNR = true)
 
 Random.seed!(3)
-Ustatic, Vstatic, Ystatic, Zstatic = GenerateData(ΣUstatic, ΣVstatic, D, k, 2, SNR = true)
+Ustatic, Vstatic, Ystatic, Zstatic = GenerateData(ΣUstatic, ΣVstatic, D, k, 1, SNR = true)
 
 Plots.plot(x, Uvariable, xlabel = "Space", ylabel = "Value", label = ["U" * string(i) for i in (1:k)'])
 Plots.plot(x, Ustatic, xlabel = "Space", ylabel = "Value", label = ["U" * string(i) for i in (1:k)'])
@@ -63,30 +67,33 @@ Plots.contourf(x, t, Zstatic', clim = extrema(Zstatic), c = :balance)
 
 # initialize model parameters
 k = 5
-ΩU = MaternCorrelation(x, ρ = 3, ν = 3.5, metric = Euclidean())
-ΩV = MaternCorrelation(t, ρ = 3, ν = 3.5, metric = Euclidean())
+ΩU = MaternCorrelation(x, ρ = 1, ν = 3.5, metric = Euclidean())
+ΩV = MaternCorrelation(t, ρ = 1, ν = 3.5, metric = Euclidean())
 
 # create data structures
 dataVariable = Data(Zvariable, x, t, k)
 dataStatic = Data(Zstatic, x, t, k)
 
 
+nsamp = 100
+nburn = 50
+
 # run models
 # variable model variable data
 parsVV = Pars(dataVariable, ΩU, ΩV)
-posteriorVV, parsVV = SampleSVD(dataVariable, parsVV; nits = 10000, burnin = 5000)
+posteriorVV, parsVV = SampleSVD(dataVariable, parsVV; nits = nsamp, burnin = nburn)
 
 # variable model static data data
-parsVS = Pars(dataVariable, ΩU, ΩV)
-posteriorVS, parsVS = SampleSVD(dataStatic, parsVS; nits = 10000, burnin = 5000)
+parsVS = Pars(dataStatic, ΩU, ΩV)
+posteriorVS, parsVS = SampleSVD(dataStatic, parsVS; nits = nsamp, burnin = nburn)
 
 # static model static data
 parsSS = Pars(dataStatic, ΩU, ΩV)
-posteriorSS, parsSS = SampleSVDstatic(dataStatic, parsSS; nits = 10000, burnin = 5000)
+posteriorSS, parsSS = SampleSVDstatic(dataStatic, parsSS; nits = nsamp, burnin = nburn)
 
 # static model variable data
-parsSV = Pars(dataStatic, ΩU, ΩV)
-posteriorSV, parsSV = SampleSVDstatic(dataVariable, parsSV; nits = 10000, burnin = 5000)
+parsSV = Pars(dataVariable, ΩU, ΩV)
+posteriorSV, parsSV = SampleSVDstatic(dataVariable, parsSV; nits = nsamp, burnin = nburn)
 
 
 
@@ -178,6 +185,15 @@ posteriorCoverage(Matrix((Vvariable[:,1:k]' .* trsfrmVV)'), posteriorVV.V, 0.95)
 posteriorCoverage(Matrix((Vstatic[:,1:k]' .* trsfrmVS)'), posteriorVS.V, 0.95) # 0.856
 posteriorCoverage(Matrix((Vstatic[:,1:k]' .* trsfrmSS)'), posteriorSS.V, 0.95) # 0.87
 posteriorCoverage(Matrix((Vvariable[:,1:k]' .* trsfrmSV)'), posteriorSV.V, 0.95) # 0.782
+
+
+
+dx = x[2] - x[1]
+mean((posteriorVV.U_upper .- posteriorVV.U_lower) .* dx, dims = 1)
+mean((posteriorSV.U_upper .- posteriorSV.U_lower) .* dx, dims = 1)
+
+mean((posteriorVV.V_upper .- posteriorVV.V_lower) .* dx, dims = 1)
+mean((posteriorSV.V_upper .- posteriorSV.V_lower) .* dx, dims = 1)
 
 
 

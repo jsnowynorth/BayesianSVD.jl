@@ -15,7 +15,7 @@
 
 using ClusterManagers
 using Distributed
-# addprocs(4) # change in Perlmutter not on local computer!!!!
+addprocs(4) # change in Perlmutter not on local computer!!!!
 # nprocs()
 
 # addprocs(SlurmManager(100)) # change in Perlmutter not on local computer!!!!
@@ -37,14 +37,7 @@ myid()
 @everywhere using DataFrames, DataFramesMeta, CSV
 
 
-@sync @distributed for i in 1:(nprocs()-1)
-
-
-    # nReplicates = 10 # change in Perlmutter not on local computer!!!!
-    # replicateVector = Vector(range(1, nReplicates))
-    # simulationParameters = reduce(hcat, reshape([[i, rand(Uniform(0.5, 4.5))] for i = replicateVector, j = kValues, k = SNRValues], :))'
-    # nSimulations = size(simulationParameters, 1)
-    # simulationParameters = hcat(simulationParameters, Vector(1:nSimulations)) # replicate ID, k value, SNR value, seed value
+@time @sync @distributed for i in 1:(nprocs()-1)
 
 
     Random.seed!(Int(i))
@@ -58,42 +51,44 @@ myid()
     D = [40, 20, 10, 5, 2] # sqrt of eigenvalues
     ϵ = 2 # noise
 
-    ρu = sort(rand(Uniform(1, 4), k), rev = true)
-    ρv = sort(rand(Uniform(1, 4), k), rev = true)
+    ρu = sort(rand(Uniform(0.5, 4.5), k), rev = true)
+    ρv = sort(rand(Uniform(0.5, 4.5), k), rev = true)
 
     
     ΣUvariable = [MaternCorrelation(x, ρ = ρu[i], ν = 3.5, metric = Euclidean()) for i in 1:k]
     ΣVvariable = [MaternCorrelation(t, ρ = ρv[i], ν = 3.5, metric = Euclidean()) for i in 1:k]
 
-    ΣUstatic = MaternCorrelation(x, ρ = 3, ν = 3.5, metric = Euclidean())
-    ΣVstatic = MaternCorrelation(t, ρ = 3, ν = 3.5, metric = Euclidean())
+    ΣUstatic = MaternCorrelation(x, ρ = 0.5, ν = 3.5, metric = Euclidean())
+    ΣVstatic = MaternCorrelation(t, ρ = 0.5, ν = 3.5, metric = Euclidean())
 
     Random.seed!(3)
-    Uvariable, Vvariable, Yvariable, Zvariable = GenerateData(ΣUvariable, ΣVvariable, D, k, 2, SNR = true)
+    Uvariable, Vvariable, Yvariable, Zvariable = GenerateData(ΣUvariable, ΣVvariable, D, k, ϵ, SNR = true)
 
     Random.seed!(3)
-    Ustatic, Vstatic, Ystatic, Zstatic = GenerateData(ΣUstatic, ΣVstatic, D, k, 2, SNR = true)
+    Ustatic, Vstatic, Ystatic, Zstatic = GenerateData(ΣUstatic, ΣVstatic, D, k, ϵ, SNR = true)
 
     
     # initialize model parameters
     k = 5
-    ΩU = MaternCorrelation(x, ρ = 3, ν = 3.5, metric = Euclidean())
-    ΩV = MaternCorrelation(t, ρ = 3, ν = 3.5, metric = Euclidean())
+    ΩU = MaternCorrelation(x, ρ = 0.5, ν = 3.5, metric = Euclidean())
+    ΩV = MaternCorrelation(t, ρ = 0.5, ν = 3.5, metric = Euclidean())
 
     # create data structures
     dataVariable = Data(Zvariable, x, t, k)
     dataStatic = Data(Zstatic, x, t, k)
 
     
-    nits = 100
-    nburn = 50
+    # nits = 10000
+    # nburn = 5000
+    nits = 2000
+    nburn = 1000
     # run models
     # variable model variable data
     parsVV = Pars(dataVariable, ΩU, ΩV)
     posteriorVV, parsVV = SampleSVD(dataVariable, parsVV; nits = nits, burnin = nburn)
 
     # variable model static data data
-    parsVS = Pars(dataVariable, ΩU, ΩV)
+    parsVS = Pars(dataStatic, ΩU, ΩV)
     posteriorVS, parsVS = SampleSVD(dataStatic, parsVS; nits = nits, burnin = nburn)
 
     # static model static data
@@ -101,7 +96,7 @@ myid()
     posteriorSS, parsSS = SampleSVDstatic(dataStatic, parsSS; nits = nits, burnin = nburn)
 
     # static model variable data
-    parsSV = Pars(dataStatic, ΩU, ΩV)
+    parsSV = Pars(dataVariable, ΩU, ΩV)
     posteriorSV, parsSV = SampleSVDstatic(dataVariable, parsSV; nits = nits, burnin = nburn)
 
 
@@ -143,15 +138,15 @@ myid()
     end
 
 
-    U_VV = posteriorCoverage(Matrix((Uvariable[:,1:k]' .* trsfrmVV)'), posteriorVV.U, 0.95) # 0.882
-    U_VS = posteriorCoverage(Matrix((Ustatic[:,1:k]' .* trsfrmVS)'), posteriorVS.U, 0.95) # 0.916
-    U_SS = posteriorCoverage(Matrix((Ustatic[:,1:k]' .* trsfrmSS)'), posteriorSS.U, 0.95) # 0.944
-    U_SV = posteriorCoverage(Matrix((Uvariable[:,1:k]' .* trsfrmSV)'), posteriorSV.U, 0.95) # 0.748
+    U_VV = posteriorCoverage(Matrix((Uvariable[:,1:k]' .* trsfrmVV)'), posteriorVV.U, 0.95)
+    U_VS = posteriorCoverage(Matrix((Ustatic[:,1:k]' .* trsfrmVS)'), posteriorVS.U, 0.95)
+    U_SS = posteriorCoverage(Matrix((Ustatic[:,1:k]' .* trsfrmSS)'), posteriorSS.U, 0.95)
+    U_SV = posteriorCoverage(Matrix((Uvariable[:,1:k]' .* trsfrmSV)'), posteriorSV.U, 0.95)
 
-    V_VV = posteriorCoverage(Matrix((Vvariable[:,1:k]' .* trsfrmVV)'), posteriorVV.V, 0.95) # 0.934
-    V_VS = posteriorCoverage(Matrix((Vstatic[:,1:k]' .* trsfrmVS)'), posteriorVS.V, 0.95) # 0.856
-    V_SS = posteriorCoverage(Matrix((Vstatic[:,1:k]' .* trsfrmSS)'), posteriorSS.V, 0.95) # 0.87
-    V_SV = posteriorCoverage(Matrix((Vvariable[:,1:k]' .* trsfrmSV)'), posteriorSV.V, 0.95) # 0.782
+    V_VV = posteriorCoverage(Matrix((Vvariable[:,1:k]' .* trsfrmVV)'), posteriorVV.V, 0.95)
+    V_VS = posteriorCoverage(Matrix((Vstatic[:,1:k]' .* trsfrmVS)'), posteriorVS.V, 0.95)
+    V_SS = posteriorCoverage(Matrix((Vstatic[:,1:k]' .* trsfrmSS)'), posteriorSS.V, 0.95)
+    V_SV = posteriorCoverage(Matrix((Vvariable[:,1:k]' .* trsfrmSV)'), posteriorSV.V, 0.95)
 
 
     Y_VV = [posteriorVV.U[:,:,j] * diagm(posteriorVV.D[:,j]) * posteriorVV.V[:,:,j]' for j in axes(posteriorVV.U, 3)]
@@ -165,8 +160,8 @@ myid()
     RMSE_SV = sqrt(mean(reduce(vcat, [(Y_SV[j] .- Yvariable) .^2 for j in axes(Y_VV, 1)])))
 
     coverData_VV = posteriorCoverage(Yvariable, Y_VV, 0.95)
-    coverData_VS = posteriorCoverage(Yvariable, Y_VS, 0.95)
-    coverData_SS = posteriorCoverage(Yvariable, Y_SS, 0.95)
+    coverData_VS = posteriorCoverage(Ystatic, Y_VS, 0.95)
+    coverData_SS = posteriorCoverage(Ystatic, Y_SS, 0.95)
     coverData_SV = posteriorCoverage(Yvariable, Y_SV, 0.95)
 
     
@@ -186,6 +181,6 @@ myid()
                     coverData_SV = coverData_SV)
     #
     
-    # CSV.write("simulationResults/run" * string(i) * ".csv", df)
-    CSV.write("../results/simulationResults/run" * string(i) * ".csv", df)
+    CSV.write("/Users/JSNorth/Desktop/VariableSimulation/run" * string(i) * ".csv", df)
+    # CSV.write("../results/simulationResults/run" * string(i) * ".csv", df)
 end

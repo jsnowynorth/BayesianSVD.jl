@@ -42,6 +42,8 @@ mutable struct MixedEffectPars <: Pars
     Uaccept::Array{Float64}
     propSV::Array{Float64}
     Vaccept::Array{Float64}
+    ρUMax::Array{Float64}
+    ρVMax::Array{Float64}
 end
 
 mutable struct RandomEffectPars <: Pars
@@ -77,6 +79,8 @@ mutable struct RandomEffectPars <: Pars
     Uaccept::Array{Float64}
     propSV::Array{Float64}
     Vaccept::Array{Float64}
+    ρUMax::Array{Float64}
+    ρVMax::Array{Float64}
 end
 
 
@@ -101,7 +105,7 @@ data = Data(Z, x, t, k)
 pars = Pars(data, ΩU, ΩV)
 ``` 
 """
-function Pars(data::MixedEffectData, ΩU::Correlation, ΩV::Correlation)
+function Pars(data::MixedEffectData, ΩU::Correlation, ΩV::Correlation; ρUMax = fill(maximum(ΩU.d)/2, data.k), ρVMax = fill(maximum(ΩV.d)/2, data.k))
 
     # linear parameters
     # β = zeros(data.p)
@@ -160,10 +164,10 @@ function Pars(data::MixedEffectData, ΩU::Correlation, ΩV::Correlation)
     propSV = 0.1*ones(data.k)
     Vaccept = zeros(data.k)
 
-    MixedEffectPars(β, M, m, U, UZ, NU, V, VZ, NV, D, σ, σU, σV, ΣU, ΣV, NΩUN, NΩVN, NΩUNinv, NΩVNinv, propSD, Daccept, propSU, Uaccept, propSV, Vaccept)
+    MixedEffectPars(β, M, m, U, UZ, NU, V, VZ, NV, D, σ, σU, σV, ΣU, ΣV, NΩUN, NΩVN, NΩUNinv, NΩVNinv, propSD, Daccept, propSU, Uaccept, propSV, Vaccept, ρUMax, ρVMax)
 end
 
-function Pars(data::RandomEffectData, ΩU::Correlation, ΩV::Correlation)
+function Pars(data::RandomEffectData, ΩU::Correlation, ΩV::Correlation; ρUMax = fill(maximum(ΩU.d)/2, data.k), ρVMax = fill(maximum(ΩV.d)/2, data.k))
 
     # inital values for basis functions
     svdY = svd(data.Z)
@@ -216,7 +220,7 @@ function Pars(data::RandomEffectData, ΩU::Correlation, ΩV::Correlation)
     propSV = 0.1*ones(data.k)
     Vaccept = zeros(data.k)
 
-    RandomEffectPars(U, UZ, NU, V, VZ, NV, D, σ, σU, σV, ΣU, ΣV, NΩUN, NΩVN, NΩUNinv, NΩVNinv, propSD, Daccept, propSU, Uaccept, propSV, Vaccept)
+    RandomEffectPars(U, UZ, NU, V, VZ, NV, D, σ, σU, σV, ΣU, ΣV, NΩUN, NΩVN, NΩUNinv, NΩVNinv, propSD, Daccept, propSU, Uaccept, propSV, Vaccept, ρUMax, ρVMax)
 end
 
 
