@@ -381,7 +381,8 @@ function update_ρU(data::Data, pars::Pars, Ω::T) where T <: DependentCorrelati
         Cprop = copy(pars.ΩU[i])
         Cprop.ρ = ρprop
         Cprop = updateCorrelation(Cprop)
-        ρprior = InverseGamma(2, 2)
+        # ρprior = InverseGamma(2, 2)
+        ρprior = Uniform(0, pars.ρUMax[i])
 
         Σprop =  pars.σU[i] * Hermitian(pars.NU[:,:,i]' * Cprop.K * pars.NU[:,:,i])
         Σcurr = pars.σU[i] * pars.NΩUN[:,:,i]
@@ -417,7 +418,8 @@ function update_ρV(data::Data, pars::Pars, Ω::T) where T <: DependentCorrelati
         Cprop = copy(pars.ΩV[i])
         Cprop.ρ = ρprop
         Cprop = updateCorrelation(Cprop)
-        ρprior = InverseGamma(2, 2)
+        # ρprior = InverseGamma(2, 2)
+        ρprior = Uniform(0, pars.ρVMax[i])
 
         Σprop =  pars.σV[i] * Hermitian(pars.NV[:,:,i]' * Cprop.K * pars.NV[:,:,i])
         Σcurr = pars.σV[i] * pars.NΩVN[:,:,i]
@@ -443,6 +445,79 @@ function update_ρV(data::Data, pars::Pars, Ω::T) where T <: IndependentCorrela
 end
 
 
+function update_ρUGrouped(data::Data, pars::Pars, Ω::T) where T <: DependentCorrelation
+
+    propsd = pars.propSU[1]
+    ρprop = rand(truncated(Normal(pars.ΩU[1].ρ, propsd), 0, pars.ρUMax[1]))
+    Cprop = copy(pars.ΩU[1])
+    Cprop.ρ = ρprop
+    Cprop = updateCorrelation(Cprop)
+    ρprior = Uniform(0, pars.ρUMax[1])
+    
+    
+    rat = 0
+    for i in 1:data.k
+        
+        Σprop =  pars.σU[i] * Hermitian(pars.NU[:,:,i]' * Cprop.K * pars.NU[:,:,i])
+        Σcurr = pars.σU[i] * pars.NΩUN[:,:,i]
+    
+        rat += ρLike(pars.UZ[:,i], pars.D[i], Σprop) + logpdf(ρprior, ρprop) + logpdf(truncated(Normal(ρprop, propsd), 0, Inf), pars.ΩU[i].ρ) - 
+                (ρLike(pars.UZ[:,i], pars.D[i], Σcurr) + logpdf(ρprior, pars.ΩU[i].ρ) + logpdf(truncated(Normal(pars.ΩU[i].ρ, propsd), 0, Inf), ρprop))
+    
+    end
+    
+    if log(rand(Uniform())) < rat
+        for i in 1:data.k
+            pars.ΩU[i] = Cprop
+            pars.Uaccept[i] = 1
+        end
+    end
+
+    return pars
+    
+end
+
+function update_ρUGrouped(data::Data, pars::Pars, Ω::T) where T <: IndependentCorrelation
+    return pars
+end
+
+function update_ρVGrouped(data::Data, pars::Pars, Ω::T) where T <: DependentCorrelation
+
+    propsd = pars.propSV[1]
+    ρprop = rand(truncated(Normal(pars.ΩV[1].ρ, propsd), 0, pars.ρVMax[1]))
+    Cprop = copy(pars.ΩV[1])
+    Cprop.ρ = ρprop
+    Cprop = updateCorrelation(Cprop)
+    ρprior = Uniform(0, pars.ρVMax[1])
+    
+    
+    rat = 0
+    for i in 1:data.k
+        
+        Σprop =  pars.σV[i] * Hermitian(pars.NV[:,:,i]' * Cprop.K * pars.NV[:,:,i])
+        Σcurr = pars.σV[i] * pars.NΩVN[:,:,i]
+    
+        rat += ρLike(pars.VZ[:,i], pars.D[i], Σprop) + logpdf(ρprior, ρprop) + logpdf(truncated(Normal(ρprop, propsd), 0, Inf), pars.ΩV[i].ρ) - 
+                (ρLike(pars.VZ[:,i], pars.D[i], Σcurr) + logpdf(ρprior, pars.ΩV[i].ρ) + logpdf(truncated(Normal(pars.ΩV[i].ρ, propsd), 0, Inf), ρprop))
+    
+    end
+    
+    if log(rand(Uniform())) < rat
+        for i in 1:data.k
+            pars.ΩV[i] = Cprop
+            pars.Vaccept[i] = 1
+        end
+    end
+
+    return pars
+    
+end
+
+function update_ρVGrouped(data::Data, pars::Pars, Ω::T) where T <: IndependentCorrelation
+    return pars
+end
+
+
 
 
 #### Sampling Function
@@ -451,7 +526,7 @@ end
 
 Runs the MCMC sampler for the Bayesian SVD model.
 
-See also [`Pars`](@ref), [`Data`](@ref), and [`Posterior`](@ref).
+    See also [`Pars`](@ref), [`Data`](@ref), [`Posterior`](@ref), and [`SampleSVDGrouped`](@ref).
 
 # Arguments
 - data: Data structure of type Identity, Exponential, Gaussian, or Matern
@@ -742,7 +817,145 @@ function SampleSVD(data::RandomEffectData, pars::RandomEffectPars; nits = 1000, 
 
 end
 
-function SampleSVDstatic(data::RandomEffectData, pars::RandomEffectPars; nits = 1000, burnin = 500, show_progress = true)
+
+
+"""
+    SampleSVDGrouped(data::Data, pars::Pars; nits = 10000, burnin = 5000, show_progress = true)
+
+    Runs the MCMC sampler for the Bayesian SVD model. Exact same documentation as SampleSVD except now the length-scales for U and V
+    are restricted to be the same.
+
+See also [`Pars`](@ref), [`Data`](@ref), [`Posterior`](@ref), and [`SampleSVD`](@ref).
+
+"""
+function SampleSVDGrouped(data::MixedEffectData, pars::MixedEffectPars; nits = 1000, burnin = 500, show_progress = true)
+
+    keep_samps = Int(nits - burnin)
+
+    β_post = Array{Float64}(undef, data.p, keep_samps)
+    U_post = Array{Float64}(undef, data.n, data.k, keep_samps)
+    V_post = Array{Float64}(undef, data.m, data.k, keep_samps)
+    D_post = Array{Float64}(undef, data.k, keep_samps)
+    σ_post = Array{Float64}(undef, keep_samps)
+    σU_post = Array{Float64}(undef, data.k, keep_samps)
+    σV_post = Array{Float64}(undef, data.k, keep_samps)
+    ρU_post = Array{Float64}(undef, data.k, keep_samps)
+    ρV_post = Array{Float64}(undef, data.k, keep_samps)
+    propSD_post = Array{Float64}(undef, data.k, burnin)
+    Daccept_post = Array{Float64}(undef, data.k, burnin)
+    propSU_post = Array{Float64}(undef, data.k, burnin)
+    Uaccept_post = Array{Float64}(undef, data.k, burnin)
+    propSV_post = Array{Float64}(undef, data.k, burnin)
+    Vaccept_post = Array{Float64}(undef, data.k, burnin)
+
+    p = Progress(burnin, desc = "Burnin..."; showspeed = true, enabled = show_progress)
+    # @showprogress 1 "Burnin..." for i in 1:burnin
+    for i in 1:burnin
+
+        pars = update_β(data, pars)
+        pars = update_D(data, pars)
+        pars = update_U(data, pars)
+        pars = update_V(data, pars)
+        pars = update_σ(data, pars)
+        pars = update_σU(data, pars)
+        pars = update_σV(data, pars)
+        pars = update_ρUGrouped(data, pars, pars.ΩU[1])
+        pars = update_ρVGrouped(data, pars, pars.ΩV[1])
+
+        # D acceptance rate
+        Daccept_post[:,i] = pars.Daccept
+        pars.Daccept = zeros(data.k)
+
+        if mod(i, 10) == 0
+            acceptRate = mean(Daccept_post[:,(i-9):i], dims = 2)
+            for j in 1:data.k
+                if acceptRate[j] < 0.25
+                    pars.propSD[j] = pars.propSD[j] * 0.7
+                elseif acceptRate[j] > 0.45
+                    pars.propSD[j] = pars.propSD[j] / 0.7
+                else
+                    pars.propSD[j] = pars.propSD[j]
+                end
+            end
+        end
+        propSD_post[:,i] = pars.propSD
+
+        # ρU acceptance rate
+        Uaccept_post[:,i] = pars.Uaccept
+        pars.Uaccept = zeros(data.k)
+    
+        if mod(i, 10) == 0
+            acceptRate = mean(Uaccept_post[:,(i-9):i], dims = 2)
+            for j in 1:data.k
+                if acceptRate[j] < 0.25
+                    pars.propSU[j] = pars.propSU[j] * 0.7
+                elseif acceptRate[j] > 0.45
+                    pars.propSU[j] = pars.propSU[j] / 0.7
+                else
+                    pars.propSU[j] = pars.propSU[j]
+                end
+            end
+        end
+        propSU_post[:,i] = pars.propSU
+
+
+        # ρV acceptance rate
+        Vaccept_post[:,i] = pars.Vaccept
+        pars.Vaccept = zeros(data.k)
+    
+        if mod(i, 10) == 0
+            acceptRate = mean(Vaccept_post[:,(i-9):i], dims = 2)
+            for j in 1:data.k
+                if acceptRate[j] < 0.25
+                    pars.propSV[j] = pars.propSV[j] * 0.7
+                elseif acceptRate[j] > 0.45
+                    pars.propSV[j] = pars.propSV[j] / 0.7
+                else
+                    pars.propSV[j] = pars.propSV[j]
+                end
+            end
+        end
+        propSV_post[:,i] = pars.propSV
+
+        ProgressMeter.next!(p)
+
+    end
+    
+    p = Progress(keep_samps, desc = "Sampling..."; showspeed = true, enabled = show_progress)
+    # @showprogress 1 "Sampling..." for i in 1:keep_samps
+    for i in 1:keep_samps
+
+        pars = update_β(data, pars)
+        pars = update_D(data, pars)
+        pars = update_U(data, pars)
+        pars = update_V(data, pars)
+        pars = update_σ(data, pars)
+        pars = update_σU(data, pars)
+        pars = update_σV(data, pars)
+        pars = update_ρUGrouped(data, pars, pars.ΩU[1])
+        pars = update_ρVGrouped(data, pars, pars.ΩV[1])
+    
+        β_post[:,i] = pars.β
+        U_post[:,:,i] = pars.U
+        V_post[:,:,i] = pars.V
+        D_post[:,i] = pars.D
+        σ_post[i] = pars.σ
+        σU_post[:,i] = pars.σU
+        σV_post[:,i] = pars.σV
+        ρU_post[:,i] = [pars.ΩU[i].ρ for i in 1:data.k]
+        ρV_post[:,i] = [pars.ΩV[i].ρ for i in 1:data.k]
+
+        ProgressMeter.next!(p)
+    
+    end
+    
+    posterior = Posterior(data, β_post, U_post, V_post, D_post, σ_post, σU_post, σV_post, ρU_post, ρV_post)
+    
+    return posterior, pars
+
+end
+
+function SampleSVDGrouped(data::RandomEffectData, pars::RandomEffectPars; nits = 1000, burnin = 500, show_progress = true)
 
     keep_samps = Int(nits - burnin)
 
@@ -771,8 +984,8 @@ function SampleSVDstatic(data::RandomEffectData, pars::RandomEffectPars; nits = 
         pars = update_σ(data, pars)
         pars = update_σU(data, pars)
         pars = update_σV(data, pars)
-        # pars = update_ρU(data, pars, pars.ΩU[1])
-        # pars = update_ρV(data, pars, pars.ΩV[1])
+        pars = update_ρUGrouped(data, pars, pars.ΩU[1])
+        pars = update_ρVGrouped(data, pars, pars.ΩV[1])
 
         # D acceptance rate
         Daccept_post[:,i] = pars.Daccept
@@ -843,8 +1056,8 @@ function SampleSVDstatic(data::RandomEffectData, pars::RandomEffectPars; nits = 
         pars = update_σ(data, pars)
         pars = update_σU(data, pars)
         pars = update_σV(data, pars)
-        # pars = update_ρU(data, pars, pars.ΩU[1])
-        # pars = update_ρV(data, pars, pars.ΩV[1])
+        pars = update_ρUGrouped(data, pars, pars.ΩU[1])
+        pars = update_ρVGrouped(data, pars, pars.ΩV[1])
     
         U_post[:,:,i] = pars.U
         V_post[:,:,i] = pars.V

@@ -47,7 +47,7 @@ export
 
     # overall sample function
     SampleSVD,
-    SampleSVDstatic,
+    SampleSVDGrouped,
 
     # Correlation Kernels
     IdentityCorrelation,

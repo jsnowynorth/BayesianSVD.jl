@@ -80,7 +80,7 @@ k = 10
 data = Data(Z, locs, t, k)
 pars = Pars(data, ΩU, ΩV; ρUMax = fill(400, k), ρVMax = fill(7, k))
 
-posterior, pars = SampleSVD(data, pars; nits = 1000, burnin = 500)
+posterior, pars = SampleSVD(data, pars; nits = 1000, burnin = 1000)
 
 # jldsave("../BSVDresults/run_1.jld2"; data, pars, posterior)
 # data, pars, posterior = jldopen("../results/PDOResults/PDO.jld2")

@@ -10,7 +10,7 @@
 #SBATCH -J PDO                                  # name of job
 #SBATCH --mail-user=jsnorth@lbl.gov             # email
 #SBATCH --mail-type=ALL                         # when to email notification
-#SBATCH -t 0-04:00:00                           # time in days-hours:minutes:seconds
+#SBATCH -t 0-10:00:00                           # time in days-hours:minutes:seconds
 #SBATCH -A m1517                                # project to charge for the job
 #--------------------------------------------------------------------------------
 
@@ -32,7 +32,7 @@ module load cray-netcdf
 ## ARG4: burnin = parse(Int64, ARGS[4]) # number of samples to burn (when equal to nits, no samples will be saved and still in burnin phase)
 
 ## run the application
-srun -n 1 -c 8 --cpu_bind=cores julia t2m.jl # first run for 1000 and burn 1000 - initializes model
+srun -n 1 -c 8 --cpu_bind=cores julia t2mV2.jl # first run for 1000 and burn 1000 - initializes model
 # srun -n 1 -c 8 --cpu_bind=cores julia t2mcontinue.jl 2 false 1000 1000 # BURNIN: file false=burnin numSamps numBurn
 # srun -n 1 -c 8 --cpu_bind=cores julia t2mcontinue.jl 6 true 1000 0 # SAMPLE: file true=sample numSamps numBurn
 

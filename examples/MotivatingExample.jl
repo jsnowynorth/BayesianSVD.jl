@@ -12,7 +12,7 @@ using LaTeXStrings
 ######################################################################
 #region
 
-Random.seed!(3659)
+Random.seed!(485)
 
 m = 100
 n = 100
@@ -27,15 +27,18 @@ k = 5
 # ρu = sort(rand(truncated(Exponential(3), lower = 0.5, upper = 4.5), k), rev = true)
 # ρv = sort(rand(truncated(Exponential(3), lower = 0.5, upper = 4.5), k), rev = true)
 
-ρu = sort(rand(Uniform(0.5, 4.5), k), rev = true)
-ρv = sort(rand(Uniform(0.5, 4.5), k), rev = true)
+ρu = sort(rand(Uniform(1, 4), k), rev = true)
+ρv = sort(rand(Uniform(1, 4), k), rev = true)
+
+# ρu = [4.2, 3, 2, 1.5, 1]
+# ρv = [4.2, 3, 2, 1.5, 1]
 
 
 ΣUvariable = [MaternCorrelation(x, ρ = ρu[i], ν = 3.5, metric = Euclidean()) for i in 1:k]
 ΣVvariable = [MaternCorrelation(t, ρ = ρv[i], ν = 3.5, metric = Euclidean()) for i in 1:k]
 
-ΣUstatic = MaternCorrelation(x, ρ = 1, ν = 3.5, metric = Euclidean())
-ΣVstatic = MaternCorrelation(t, ρ = 1, ν = 3.5, metric = Euclidean())
+ΣUstatic = MaternCorrelation(x, ρ = 2, ν = 3.5, metric = Euclidean())
+ΣVstatic = MaternCorrelation(t, ρ = 2, ν = 3.5, metric = Euclidean())
 
 Random.seed!(3)
 Uvariable, Vvariable, Yvariable, Zvariable = GenerateData(ΣUvariable, ΣVvariable, D, k, 1, SNR = true)
@@ -67,16 +70,16 @@ Plots.contourf(x, t, Zstatic', clim = extrema(Zstatic), c = :balance)
 
 # initialize model parameters
 k = 5
-ΩU = MaternCorrelation(x, ρ = 1, ν = 3.5, metric = Euclidean())
-ΩV = MaternCorrelation(t, ρ = 1, ν = 3.5, metric = Euclidean())
+ΩU = MaternCorrelation(x, ρ = 2, ν = 3.5, metric = Euclidean())
+ΩV = MaternCorrelation(t, ρ = 2, ν = 3.5, metric = Euclidean())
 
 # create data structures
 dataVariable = Data(Zvariable, x, t, k)
 dataStatic = Data(Zstatic, x, t, k)
 
 
-nsamp = 100
-nburn = 50
+nsamp = 5000
+nburn = 2500
 
 # run models
 # variable model variable data
@@ -89,11 +92,11 @@ posteriorVS, parsVS = SampleSVD(dataStatic, parsVS; nits = nsamp, burnin = nburn
 
 # static model static data
 parsSS = Pars(dataStatic, ΩU, ΩV)
-posteriorSS, parsSS = SampleSVDstatic(dataStatic, parsSS; nits = nsamp, burnin = nburn)
+posteriorSS, parsSS = SampleSVDGrouped(dataStatic, parsSS; nits = nsamp, burnin = nburn)
 
 # static model variable data
 parsSV = Pars(dataVariable, ΩU, ΩV)
-posteriorSV, parsSV = SampleSVDstatic(dataVariable, parsSV; nits = nsamp, burnin = nburn)
+posteriorSV, parsSV = SampleSVDGrouped(dataVariable, parsSV; nits = nsamp, burnin = nburn)
 
 
 
@@ -108,6 +111,12 @@ Plots.hline!([D], label = false)
 
 Plots.plot(posteriorSV.D', label = false, size = (900, 600))
 Plots.hline!([D], label = false)
+
+
+Plots.plot(posteriorVV.ρU', label = false, size = (900, 600))
+Plots.plot(posteriorVS.ρU', label = false, size = (900, 600))
+Plots.plot(posteriorSS.ρU', label = false, size = (900, 600))
+Plots.plot(posteriorSV.ρU', label = false, size = (900, 600))
 
 
 trsfrmVV = ones(k)
@@ -191,10 +200,35 @@ posteriorCoverage(Matrix((Vvariable[:,1:k]' .* trsfrmSV)'), posteriorSV.V, 0.95)
 dx = x[2] - x[1]
 mean((posteriorVV.U_upper .- posteriorVV.U_lower) .* dx, dims = 1)
 mean((posteriorSV.U_upper .- posteriorSV.U_lower) .* dx, dims = 1)
+mean((posteriorSS.U_upper .- posteriorSS.U_lower) .* dx, dims = 1)
+mean((posteriorSV.U_upper .- posteriorSV.U_lower) .* dx, dims = 1)
+
+mean((posteriorVV.U_upper .- posteriorVV.U_lower) .* dx, dims = 1) .- mean((posteriorSV.U_upper .- posteriorSV.U_lower) .* dx, dims = 1)
 
 mean((posteriorVV.V_upper .- posteriorVV.V_lower) .* dx, dims = 1)
 mean((posteriorSV.V_upper .- posteriorSV.V_lower) .* dx, dims = 1)
 
+mean((posteriorVV.V_upper .- posteriorVV.V_lower) .* dx, dims = 1) .- mean((posteriorSV.V_upper .- posteriorSV.V_lower) .* dx, dims = 1)
+
+
+Plots.plot((posteriorVV.U_upper .- posteriorVV.U_lower) .* dx)
+Plots.plot((posteriorSV.U_upper .- posteriorSV.U_lower) .* dx)
+
+Plots.plot((posteriorVV.V_upper .- posteriorVV.V_lower) .* dx)
+Plots.plot((posteriorSV.V_upper .- posteriorSV.V_lower) .* dx)
+
+
+
+mean([sqrt.(mean((posteriorVV.U[:,:,i] .- Uvariable) .^2, dims = 1)) for i in axes(posteriorVV.U, 3)])
+mean([sqrt.(mean((posteriorSV.U[:,:,i] .- Ustatic) .^2, dims = 1)) for i in axes(posteriorSV.U, 3)])
+mean([sqrt.(mean((posteriorSS.U[:,:,i] .- Ustatic) .^2, dims = 1)) for i in axes(posteriorSS.U, 3)])
+mean([sqrt.(mean((posteriorVS.U[:,:,i] .- Uvariable) .^2, dims = 1)) for i in axes(posteriorVS.U, 3)])
+
+
+Plots.plot(x, posteriorVV.U_hat .- Uvariable)
+Plots.plot(x, posteriorSV.U_hat .- Ustatic)
+Plots.plot(x, posteriorSS.U_hat .- Ustatic)
+Plots.plot(x, posteriorVS.U_hat .- Uvariable)
 
 
 # posteriorCoverage(ρu, posteriorVV.ρU, 0.95)
@@ -216,4 +250,43 @@ Plots.hline!(Vvariable[45,:] .* trsfrmVV, c = :black, label = false)
 
 
 #endregion
+
+
+
+# data = Data(Zstatic, x, t, k)
+# pars = Pars(data, ΩU, ΩV)
+
+
+# propsd = pars.propSU[1]
+# ρprop = rand(truncated(Normal(pars.ΩU[1].ρ, propsd), 0, pars.ρUMax[1]))
+# Cprop = copy(pars.ΩU[1])
+# Cprop.ρ = ρprop
+# Cprop = updateCorrelation(Cprop)
+# ρprior = Uniform(0, pars.ρUMax[1])
+
+
+# rat = 0
+# for i in 1:data.k
+    
+#     Σprop =  pars.σU[i] * Hermitian(pars.NU[:,:,i]' * Cprop.K * pars.NU[:,:,i])
+#     Σcurr = pars.σU[i] * pars.NΩUN[:,:,i]
+
+#     rat += ρLike(pars.UZ[:,i], pars.D[i], Σprop) + logpdf(ρprior, ρprop) + logpdf(truncated(Normal(ρprop, propsd), 0, Inf), pars.ΩU[i].ρ) - 
+#             (ρLike(pars.UZ[:,i], pars.D[i], Σcurr) + logpdf(ρprior, pars.ΩU[i].ρ) + logpdf(truncated(Normal(pars.ΩU[i].ρ, propsd), 0, Inf), ρprop))
+
+# end
+
+# if log(rand(Uniform())) < rat
+#     for i in 1:data.k
+#         pars.ΩU[i] = Cprop
+#         pars.Uaccept[i] = 1
+#     end
+# end
+
+
+
+
+
+
+
 
