@@ -15,34 +15,16 @@ using RecipesBase # special plots
 
 DocMeta.setdocmeta!(BayesianSVD, :DocTestSetup, :(using BayesianSVD); recursive=true)
 
-# makedocs(;
-#     modules=[BayesianSVD],
-#     authors="Josh North <jsnowynorth@gmail.com> and contributors",
-#     repo="https://github.com/jsnowynorth/BayesianSVD.jl/blob/{commit}{path}#{line}",
-#     sitename="BayesianSVD.jl",
-#     format=Documenter.HTML(;
-#         prettyurls=get(ENV, "CI", "nothing") == "true",
-#         canonical="https://jsnowynorth.github.io/BayesianSVD.jl",
-#         edit_link="main",
-#         assets=String[],
-#     ),
-#     pages=[
-#         "Home" => "index.md",
-#         "Examples" => "example.md",
-#         "API" => "api.md"
-#     ],
-# )
-
 makedocs(;
     modules=[BayesianSVD],
     authors="Josh North <jsnowynorth@gmail.com> and contributors",
+    repo="https://github.com/jsnowynorth/BayesianSVD.jl/blob/{commit}{path}#{line}",
     sitename="BayesianSVD.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "nothing") == "true",
         canonical="https://jsnowynorth.github.io/BayesianSVD.jl",
         edit_link="main",
         assets=String[],
-        repolink="https://github.com/jsnowynorth/BayesianSVD.jl/blob/{commit}{path}#{line}",
     ),
     pages=[
         "Home" => "index.md",
@@ -50,6 +32,7 @@ makedocs(;
         "API" => "api.md"
     ],
 )
+
 
 deploydocs(;
     repo="github.com/jsnowynorth/BayesianSVD.jl.git",
