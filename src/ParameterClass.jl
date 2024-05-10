@@ -105,7 +105,7 @@ data = Data(Z, x, t, k)
 pars = Pars(data, ΩU, ΩV)
 ``` 
 """
-function Pars(data::MixedEffectData, ΩU::Correlation, ΩV::Correlation; ρUMax = fill(maximum(ΩU.d)/2, data.k), ρVMax = fill(maximum(ΩV.d)/2, data.k))
+function Pars(data::MixedEffectData, ΩU::Correlation, ΩV::Correlation; ρUMax = hasfield(typeof(ΩU), :d) ? fill(maximum(ΩU.d)/2, data.k) : fill(1, data.k), ρVMax = hasfield(typeof(ΩV), :d) ? fill(maximum(ΩV.d)/2, data.k) : fill(1, data.k))
 
     # linear parameters
     # β = zeros(data.p)
@@ -167,7 +167,7 @@ function Pars(data::MixedEffectData, ΩU::Correlation, ΩV::Correlation; ρUMax 
     MixedEffectPars(β, M, m, U, UZ, NU, V, VZ, NV, D, σ, σU, σV, ΣU, ΣV, NΩUN, NΩVN, NΩUNinv, NΩVNinv, propSD, Daccept, propSU, Uaccept, propSV, Vaccept, ρUMax, ρVMax)
 end
 
-function Pars(data::RandomEffectData, ΩU::Correlation, ΩV::Correlation; ρUMax = fill(maximum(ΩU.d)/2, data.k), ρVMax = fill(maximum(ΩV.d)/2, data.k))
+function Pars(data::RandomEffectData, ΩU::Correlation, ΩV::Correlation; ρUMax = hasfield(typeof(ΩU), :d) ? fill(maximum(ΩU.d)/2, data.k) : fill(1, data.k), ρVMax = hasfield(typeof(ΩV), :d) ? fill(maximum(ΩV.d)/2, data.k) : fill(1, data.k))
 
     # inital values for basis functions
     svdY = svd(data.Z)
