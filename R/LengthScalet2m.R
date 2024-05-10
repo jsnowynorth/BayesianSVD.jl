@@ -96,8 +96,8 @@ globalRangeAll = FittedModel$range
 p1 = ggplot(Ests, aes(x = U, y = range)) +
   geom_point(size = 3) +
   geom_line(size = 1) +
-  geom_hline(yintercept = globalRangeAll, color = "blue", linewidth = 1.2) +
-  geom_hline(yintercept = globalRange10, color = "red", linewidth = 1.2) +
+  # geom_hline(yintercept = globalRangeAll, color = "blue", linewidth = 1.2) +
+  # geom_hline(yintercept = globalRange10, color = "red", linewidth = 1.2) +
   xlab("U Basis Function") +
   ylab("Estimated Length-Scale") +
   scale_y_continuous(breaks = seq(50, 450, 100), limits = c(49, 450)) +
@@ -201,11 +201,11 @@ p2 = ggplot(EstsV, aes(x = V, y = range)) +
 
 
 
-p = cowplot::plot_grid(p1, p2, labels = c("a)", "b)"), label_size = 20, hjust = 0)
+p = cowplot::plot_grid(p1, p2, labels = c("A)", "B)"), label_size = 20, hjust = 0)
 
 
 
-ggsave("../figures/lengthScaleFiguret2mMotivating.png", width = 12, height = 6)
+ggsave("../figures/lengthScaleFiguret2mMotivating.pdf", width = 16, height = 4)
 # ggsave("/Users/JSNorth/.julia/dev/BayesianSVD/figures/lengthScaleFiguret2mMotivating.png", width = 16, height = 4)
 
 

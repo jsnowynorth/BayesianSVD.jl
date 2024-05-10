@@ -1,4 +1,11 @@
 
+########################################################################
+#### Author: Joshua North
+#### Project: BayesianSVD
+#### Date: 10-May-2024
+#### Description: Code used for Synthetic example #3: covariates
+########################################################################
+
 
 using BayesianSVD
 using Distances, Plots, Random, Distributions, LinearAlgebra, Statistics

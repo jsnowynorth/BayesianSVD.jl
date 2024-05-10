@@ -61,10 +61,8 @@ myid()
     ΣUstatic = MaternCorrelation(x, ρ = 0.5, ν = 3.5, metric = Euclidean())
     ΣVstatic = MaternCorrelation(t, ρ = 0.5, ν = 3.5, metric = Euclidean())
 
-    Random.seed!(3)
     Uvariable, Vvariable, Yvariable, Zvariable = GenerateData(ΣUvariable, ΣVvariable, D, k, ϵ, SNR = true)
 
-    Random.seed!(3)
     Ustatic, Vstatic, Ystatic, Zstatic = GenerateData(ΣUstatic, ΣVstatic, D, k, ϵ, SNR = true)
 
     

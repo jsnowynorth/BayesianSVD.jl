@@ -2,7 +2,7 @@
 #--------------------------------------------------------------------------------
 #  SBATCH CONFIG
 #--------------------------------------------------------------------------------
-#SBATCH --nodes=4                                    # number of nodes
+#SBATCH --nodes=20                                    # number of nodes
 #SBATCH --ntasks-per-node=32
 #SBATCH -C cpu                                  # constraint (haswell or knl for cori and cpu for perlmutter)
 #SBATCH -q regular                              # quality of service (qos)

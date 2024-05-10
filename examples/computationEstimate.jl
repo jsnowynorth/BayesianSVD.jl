@@ -1,5 +1,10 @@
+########################################################################
+#### Author: Joshua North
+#### Project: BayesianSVD
+#### Date: 10-May-2024
+#### Description: Code used for Fig S.2
+########################################################################
 
-# include("../src/BasisFunctions.jl")
 
 using BayesianSVD
 using Distances, Plots, Random, Distributions, LinearAlgebra

@@ -1,4 +1,12 @@
 
+########################################################################
+#### Author: Joshua North
+#### Project: BayesianSVD
+#### Date: 10-May-2024
+#### Description: Code used to create Fig 4, Fig S.1, and Fig S.4 
+########################################################################
+
+
 using BayesianSVD
 using Distances, Plots, Random, Distributions, LinearAlgebra
 

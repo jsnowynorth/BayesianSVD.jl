@@ -3,7 +3,7 @@
 #### Author: Joshua North
 #### Project: BayesianSpatialBasisFunctions
 #### Date: 20-April-2023
-#### Description: Simulation study code
+#### Description: Rank simulation study code
 ########################################################################
 
 # find . -name 'julia-*' -delete

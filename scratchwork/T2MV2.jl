@@ -122,6 +122,56 @@ k = 10 # rank or number of basis functions
 
 #endregion
 
+########################################################################
+#### Plot of the data and a decomposition
+########################################################################
+#region
+
+dtsnewind = T .> DateTime(2010,01,01)
+dtsnew = T[dtsnewind]
+dtsticks = Dates.format.(dtsnew, "yyyy-mm")
+tkmarks = (1:24:length(dtsnew), string.(dtsticks[1:24:end]))
+
+dtstart = "2021-05"
+dateStartInd = (1:Nt)[floor.(T, Dates.Month) .== DateTime(dtstart)][1]
+
+function dataPlot()
+
+    dataRange = round.((-1.01, 1.01) .* maximum(abs, Zobs[:,:,(dateStartInd):(dateStartInd+4)]), digits = 3)
+    nsteps = 20
+    nticks = 7
+
+    fig = Figure(resolution = (1200, 1200), figure_padding = 35)
+    ax1 = [GeoAxis(fig[i, j], dest = "+proj=wintri +lon_0=-122", lonlims=(-128, -116), latlims = (44, 53)) for j in 1:2, i in 1:2]
+
+    cPlt = CairoMakie.contourf!(ax1[1], lon, lat, Zobs[:,:,dateStartInd], 
+            colormap = :balance, colorrange = dataRange, 
+            levels = range(dataRange[1], dataRange[2], step = (dataRange[2]-dataRange[1])/nsteps))
+
+    for (i, axis) in enumerate(ax1)
+        CairoMakie.contourf!(axis, lon, lat, Zobs[:,:,i + dateStartInd - 1], 
+            colormap = :balance, colorrange = dataRange, 
+            levels = range(dataRange[1], dataRange[2], step = (dataRange[2]-dataRange[1])/nsteps))
+        poly!(axis, geo; strokecolor = :black, strokewidth = 1, color = (:black, 0), shading = false)
+        axis.title = Dates.format(T[i + dateStartInd - 1], "yyyy-mm")
+    end
+
+    CairoMakie.Colorbar(fig[1:2,3], cPlt, ticks = round.(range(dataRange[1], dataRange[2], length = nticks), digits = 3), height = Relative(0.82))
+    
+    hidedecorations!.(ax1)
+
+    fig
+
+end
+
+g = with_theme(dataPlot, bold_theme)
+# save("figures/dataPlotV2.png", g)
+
+
+#endregion
+
+
+
 
 ########################################################################
 #### deterministic SVD
@@ -438,11 +488,6 @@ g = with_theme(VDiffPlots, bold_theme)
 
 
 #endregion
-
-
-
-
-
 
 
 

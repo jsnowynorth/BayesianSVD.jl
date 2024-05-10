@@ -3,7 +3,7 @@
 #### Author: Joshua North
 #### Project: BayesianSpatialBasisFunctions
 #### Date: 20-December-2023
-#### Description: File to continue sampling the t2m basis functions
+#### Description: File to continue sampling the the real world example model
 ########################################################################
 
 #### load packages

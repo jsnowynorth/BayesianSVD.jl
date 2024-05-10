@@ -2,10 +2,6 @@
 using BayesianSVD
 using Distances, Plots, Random, Distributions, LinearAlgebra
 
-using CairoMakie
-using DataFrames, DataFramesMeta, Chain, CSV
-using LaTeXStrings
-
 
 ######################################################################
 #### Generate Some Data
@@ -16,35 +12,41 @@ Random.seed!(485)
 
 m = 100
 n = 100
-x = range(-5, 5, n)
-t = range(0, 10, m)
+x = range(-50, 50, n)
+t = range(0, 100, m)
 
-D = [40, 30, 20, 10, 5]
-k = 5
-ϵ = 0.1
+D = [100, 90, 80, 70, 60, 50, 40, 30, 20, 10]
+k = 10
+ϵ = 1
 
 
 # ρu = sort(rand(truncated(Exponential(3), lower = 0.5, upper = 4.5), k), rev = true)
 # ρv = sort(rand(truncated(Exponential(3), lower = 0.5, upper = 4.5), k), rev = true)
 
-ρu = sort(rand(Uniform(1, 4), k), rev = true)
-ρv = sort(rand(Uniform(1, 4), k), rev = true)
+# ρu = sort(rand(Uniform(1, 4), k), rev = true)
+# ρv = sort(rand(Uniform(1, 4), k), rev = true)
 
 # ρu = [4.2, 3, 2, 1.5, 1]
 # ρv = [4.2, 3, 2, 1.5, 1]
 
 
+
+ρu = [50, 30, 20, 10, 8, 9, 10, 8, 9, 10]
+ρv = [50, 30, 20, 10, 8, 9, 10, 8, 9, 10]
+
+# Plots.plot(1:k, ρu)
+
 ΣUvariable = [MaternCorrelation(x, ρ = ρu[i], ν = 3.5, metric = Euclidean()) for i in 1:k]
 ΣVvariable = [MaternCorrelation(t, ρ = ρv[i], ν = 3.5, metric = Euclidean()) for i in 1:k]
 
-ΣUstatic = MaternCorrelation(x, ρ = 2, ν = 3.5, metric = Euclidean())
-ΣVstatic = MaternCorrelation(t, ρ = 2, ν = 3.5, metric = Euclidean())
+ΣUstatic = MaternCorrelation(x, ρ = 15, ν = 3.5, metric = Euclidean())
+ΣVstatic = MaternCorrelation(t, ρ = 15, ν = 3.5, metric = Euclidean())
 
 Random.seed!(3)
-Uvariable, Vvariable, Yvariable, Zvariable = GenerateData(ΣUvariable, ΣVvariable, D, k, 1, SNR = true)
+Uvariable, Vvariable, Yvariable, Zvariable = GenerateData(ΣUvariable, ΣVvariable, D, k, ϵ, SNR = true)
 
 Random.seed!(3)
-Ustatic, Vstatic, Ystatic, Zstatic = GenerateData(ΣUstatic, ΣVstatic, D, k, 1, SNR = true)
+Ustatic, Vstatic, Ystatic, Zstatic = GenerateData(ΣUstatic, ΣVstatic, D, k, ϵ, SNR = true)
 
 Plots.plot(x, Uvariable, xlabel = "Space", ylabel = "Value", label = ["U" * string(i) for i in (1:k)'])
 Plots.plot(x, Ustatic, xlabel = "Space", ylabel = "Value", label = ["U" * string(i) for i in (1:k)'])
@@ -69,17 +71,17 @@ Plots.contourf(x, t, Zstatic', clim = extrema(Zstatic), c = :balance)
 
 
 # initialize model parameters
-k = 5
-ΩU = MaternCorrelation(x, ρ = 2, ν = 3.5, metric = Euclidean())
-ΩV = MaternCorrelation(t, ρ = 2, ν = 3.5, metric = Euclidean())
+k = 10
+ΩU = MaternCorrelation(x, ρ = 15, ν = 3.5, metric = Euclidean())
+ΩV = MaternCorrelation(t, ρ = 15, ν = 3.5, metric = Euclidean())
 
 # create data structures
 dataVariable = Data(Zvariable, x, t, k)
 dataStatic = Data(Zstatic, x, t, k)
 
 
-nsamp = 5000
-nburn = 2500
+nsamp = 1000
+nburn = 500
 
 # run models
 # variable model variable data

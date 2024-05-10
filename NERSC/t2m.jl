@@ -2,7 +2,7 @@
 #### Author: Joshua North
 #### Project: BayesianSpatialBasisFunctions
 #### Date: 20-December-2023
-#### Description: File to start sampling the t2m basis functions
+#### Description: File to start sampling the real world example model
 ########################################################################
 
 #### data info
@@ -30,8 +30,6 @@ using GeoMakie.GeoJSON
 using JLD2
 using BayesianSVD
 
-# include("/pscratch/sd/j/jsnorth/ERA5MonthlyMax/Code/anomolyFunctions.jl")
-include("anomolyFunctions.jl")
 
 #endregion
 
@@ -40,7 +38,6 @@ include("anomolyFunctions.jl")
 ########################################################################
 #region
 
-# fileName = "/Users/JSNorth/Desktop/ERA5t2m.nc"
 fileName = "../ERA5t2m.nc"
 
 #### netcdf info
@@ -62,36 +59,27 @@ t2m = ncread(fileName, "VAR_2T") .- 273.15
 
 
 ########################################################################
-#### anomoly calculation
-########################################################################
-#region
-
-anomalyAll, t2mMonMean, t2mWeightedMean, betas = anomalyDetrend(t2m, lat, lon);
-
-#endregion
-
-########################################################################
 #### run BSVD
 ########################################################################
 #region
 
-Nx, Ny, Nt = size(anomalyAll)
+Zobs = t2m .- mean(t2m)
+
+Nx, Ny, Nt = size(Zobs)
+Z = convert(Matrix{Float64}, reshape(Zobs, Nx*Ny, Nt)) # orient data
 
 locs = reduce(hcat,reshape([[x, y] for x = lon, y = lat], Nx * Ny))
-
 t = convert(Vector{Float64}, Vector(1:Nt))
-Z = convert(Matrix{Float64}, reshape(anomalyAll, Nx*Ny, Nt))
 
 k = 10
-ΩU = MaternCorrelation(lon, lat, ρ = 400, ν = 3.5, metric = Haversine(6371))
-ΩV = IdentityCorrelation(t)
+ΩU = MaternCorrelation(lon, lat, ρ = 150, ν = 3.5, metric = Haversine(6371))
+ΩV = GaussianCorrelation(t, ρ = 3)
 data = Data(Z, locs, t, k)
-pars = Pars(data, ΩU, ΩV)
+pars = Pars(data, ΩU, ΩV; ρUMax = fill(400, k), ρVMax = fill(7, k))
 
-posterior, pars = SampleSVD(data, pars; nits = 100, burnin = 50)
+posterior, pars = SampleSVD(data, pars; nits = 1000, burnin = 1000)
 
-# jldsave("../BSVDresults/run_1.jld2"; data, pars, posterior)
-# data, pars, posterior = jldopen("../results/PDOResults/PDO.jld2")
+
 @save "../BSVDresults/run_1.jld2" data pars posterior
 
 #endregion
