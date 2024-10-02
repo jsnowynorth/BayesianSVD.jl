@@ -232,7 +232,7 @@ function GaussianCorrelation(x; ρ = 1, metric = Euclidean())
 
     d = pairwise(metric, x)
     K = exp.(-(d .^2 ./ (ρ^2)))
-    K = K + diagm(0.00000001*ones(length(x)))
+    K = K + diagm(0.00000001*ones(size(d,1)))
     GaussianCorrelation(d, ρ, metric, K, inv(K), logdet(K))
 
 end
@@ -244,7 +244,7 @@ function GaussianCorrelation(x, y; ρ = 1, metric = Euclidean())
     locs = reduce(hcat,reshape([[x, y] for x = x, y = y], Nx * Ny))'
     d = pairwise(metric, locs')
     K = exp.(-(d .^2 ./ (ρ^2)))
-    K = K + diagm(0.00000001*ones(length(x)))
+    K = K + diagm(0.00000001*ones(size(d,1)))
     GaussianCorrelation(d, ρ, metric, K, inv(K), logdet(K))
     
 end
@@ -253,7 +253,7 @@ function GaussianCorrelation(X::Matrix{Float64}; ρ = 1, metric = Euclidean())
 
     d = pairwise(metric, X')
     K = exp.(-(d .^2 ./ (ρ^2)))
-    K = K + diagm(0.00000001*ones(length(x)))
+    K = K + diagm(0.00000001*ones(size(d,1)))
     GaussianCorrelation(d, ρ, metric, K, inv(K), logdet(K))
     
 end
