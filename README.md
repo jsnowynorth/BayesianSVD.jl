@@ -5,7 +5,7 @@
 [![Build Status](https://github.com/jsnowynorth/BayesianSVD.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/jsnowynorth/BayesianSVD.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![codecov.io](http://codecov.io/github/jsnowynorth/BayesianSVD.jl/coverage.svg?branch=main)](http://codecov.io/github/jsnowynorth/BayesianSVD.jl?branch=main)
 
-A package for implimenting the Bayesian SVD model from ``A flexible class of priors for orthonormal matrices with basis function-specific structure'', which can be found at [https://arxiv.org/abs/2307.13627](https://www.sciencedirect.com/science/article/pii/S2211675324000575).
+A package for implimenting the Bayesian SVD model from ``A flexible class of priors for orthonormal matrices with basis function-specific structure'', which can be found at [[https://arxiv.org/abs/2307.13627](https://doi.org/10.1016/j.spasta.2024.100866)](https://www.sciencedirect.com/science/article/pii/S2211675324000575).
 To install the package, clone the repository from GitHub and place it in your `/.julia/dev/` folder, navigate to the folder, and run 
 ```
 julia> ] dev .
